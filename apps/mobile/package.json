@@ -11,7 +11,7 @@
     "lint": "expo lint",
     "sharp": "node scripts/generate-adaptive-icon.js",
     "setup:appwrite": "node scripts/setup-appwrite.js",
-    "ingest:videos": "node scripts/ingest-videos.js",
+    "ingest:videos": "node ../../scripts/data-management/ingest-videos.js",
     "process:naat:hybrid": "node scripts/audio-processing/process-naat-audio-hybrid-v2.js",
     "process:naat:openai": "node scripts/audio-processing/process-naat-audio-openai-v2.js",
     "process:naat:groq": "node scripts/audio-processing/process-naat-audio-groq-v2.js",
