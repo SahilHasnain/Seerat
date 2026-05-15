@@ -17,7 +17,6 @@ interface SeeratNaatCardProps {
   title: string;
   thumbnail: string;
   duration: number;
-  channelName: string;
   views: number;
   uploadDate: string;
   onPress: () => void;
@@ -29,7 +28,6 @@ const SeeratNaatCard: React.FC<SeeratNaatCardProps> = React.memo(
     title,
     thumbnail,
     duration,
-    channelName,
     views,
     uploadDate,
     onPress,
@@ -42,24 +40,35 @@ const SeeratNaatCard: React.FC<SeeratNaatCardProps> = React.memo(
         onPress={onPress}
         onLongPress={onLongPress}
         delayLongPress={260}
-        className="mb-4 flex-row items-start gap-3 rounded-lg"
+        className="mb-4 flex-row items-start gap-3 rounded-xl"
         style={({ pressed }) => ({
           opacity: pressed ? 0.7 : 1,
-          backgroundColor: colors.background.secondary,
+          backgroundColor: colors.background.tertiary,
         })}
       >
+        <View
+          style={{
+            width: 3,
+            alignSelf: "stretch",
+            backgroundColor: colors.accent.secondary,
+            opacity: 0.9,
+            borderTopLeftRadius: 12,
+            borderBottomLeftRadius: 12,
+          }}
+        />
+
         <View
           className="relative overflow-hidden rounded-md"
           style={{
             width: 140,
             height: 79,
-            backgroundColor: colors.background.tertiary,
+            backgroundColor: colors.background.secondary,
           }}
         >
           {imageError || !thumbnail ? (
             <View
               className="items-center justify-center w-full h-full"
-              style={{ backgroundColor: colors.background.tertiary }}
+              style={{ backgroundColor: colors.background.secondary }}
             >
               <Ionicons name="musical-notes" size={28} color="#737373" />
             </View>
@@ -87,9 +96,9 @@ const SeeratNaatCard: React.FC<SeeratNaatCardProps> = React.memo(
           </View>
         </View>
 
-        <View className="justify-between flex-1 py-2 pr-3">
+        <View className="flex-1 justify-between py-2 pr-3">
           <Text
-            className="text-sm font-semibold leading-tight mb-1.5"
+            className="mb-1.5 text-[15px] font-semibold leading-[20px]"
             numberOfLines={2}
             ellipsizeMode="tail"
             style={{ color: colors.text.primary }}
@@ -98,11 +107,8 @@ const SeeratNaatCard: React.FC<SeeratNaatCardProps> = React.memo(
           </Text>
 
           <View className="flex-row justify-end">
-            <Text
-              className="text-[11px]"
-              style={{ color: colors.text.tertiary }}
-            >
-              {formatViews(views)} views • {formatRelativeTime(uploadDate)}
+            <Text className="text-[11px]" style={{ color: colors.text.tertiary }}>
+              {formatViews(views)} • {formatRelativeTime(uploadDate)}
             </Text>
           </View>
         </View>

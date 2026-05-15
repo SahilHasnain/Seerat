@@ -10,7 +10,6 @@ import React, { useCallback, useState } from "react";
 export function useHomeFilters() {
   // Home filters
   const [selectedFilter, setSelectedFilter] = useState<SortOption>("forYou");
-  const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
   const [selectedDuration, setSelectedDuration] = useState<DurationOption>("all");
   const [pureOnly, setPureOnly] = useState(false);
 
@@ -19,7 +18,12 @@ export function useHomeFilters() {
   const [searchDuration, setSearchDuration] = useState<DurationOption>("all");
   const [searchPureOnly, setSearchPureOnly] = useState(false);
 
-  const { showFilterModal, setShowFilterModal } = useFilterModal();
+  const {
+    showFilterModal,
+    setShowFilterModal,
+    selectedChannelId,
+    setSelectedChannelId,
+  } = useFilterModal();
   const { isSearchActive, activeSearchQuery } = useSearchContext();
 
   // Data fetching

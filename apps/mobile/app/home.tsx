@@ -3,7 +3,6 @@ import NaatActionSheet from "@/components/NaatActionSheet";
 import { SearchFilterBar } from "@/components/SearchFilterBar";
 import { SearchSuggestions } from "@/components/SearchSuggestions";
 import SeeratNaatCard from "@/components/SeeratNaatCard";
-import UnifiedFilterBar from "@/components/UnifiedFilterBar";
 import { colors } from "@/constants/theme";
 import { useHeaderVisibility } from "@/contexts/HeaderVisibilityContext.animated";
 import { useSearch as useSearchContext } from "@/contexts/SearchContext";
@@ -286,7 +285,6 @@ export default function HomeScreen() {
             title={item.title}
             thumbnail={item.thumbnailUrl}
             duration={getPreferredDuration(item)}
-            channelName={item.channelName}
             views={item.views}
             uploadDate={item.uploadDate}
             onPress={() => handleNaatPress(item.$id)}
@@ -434,24 +432,6 @@ export default function HomeScreen() {
                         </TouchableOpacity>
                       </View>
                     </View>
-                  )}
-                  <UnifiedFilterBar
-                    selectedSort={filters.selectedFilter}
-                    onSortChange={filters.setSelectedFilter}
-                    channels={filters.channels}
-                    selectedChannelId={filters.selectedChannelId}
-                    onChannelChange={filters.setSelectedChannelId}
-                    channelsLoading={filters.channelsLoading}
-                    selectedDuration={filters.selectedDuration}
-                    onDurationChange={filters.setSelectedDuration}
-                    pureOnly={filters.pureOnly}
-                    onPureOnlyChange={filters.setPureOnly}
-                    externalOpen={filters.showFilterModal}
-                    onExternalClose={() => filters.setShowFilterModal(false)}
-                    hideChips={!filters.hasActiveHomeFilters}
-                  />
-                  {filters.hasActiveHomeFilters && (
-                    <View style={{ height: 12 }} />
                   )}
                 </>
               ) : null}

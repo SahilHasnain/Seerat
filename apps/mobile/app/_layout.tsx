@@ -33,8 +33,8 @@ import {
 import { VideoProvider } from "@/contexts/VideoContext";
 import { useDeepLinking } from "@/hooks/useDeepLinking";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { useChannels } from "@/hooks/useChannels";
 import { Ionicons } from "@expo/vector-icons";
-import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import * as Sentry from "@sentry/react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Tabs, useRouter, useSegments } from "expo-router";
@@ -70,7 +70,8 @@ function RootLayoutContent() {
   const { isNormalAudioActive, isLiveRadioActive } = usePlaybackMode();
   const { translateY } = useTabBarVisibility();
   const { translateY: headerTranslateY } = useHeaderVisibility();
-  const { setShowFilterModal } = useFilterModal();
+  const { selectedChannelId, setSelectedChannelId } = useFilterModal();
+  const { channels, loading: channelsLoading } = useChannels();
   const insets = useSafeAreaInsets();
   const {
     isSearchActive,
@@ -149,14 +150,15 @@ function RootLayoutContent() {
     <>
       {/* Animated Header - Global across all screens except video */}
       {!isOnVideoScreen && (
-        <AnimatedHeader
+          <AnimatedHeader
           translateY={headerTranslateY}
           isScrolledDown={isScrolledDownValue}
           selectedSort="forYou"
-          selectedChannelId={null}
+          selectedChannelId={selectedChannelId}
           selectedDuration="all"
-          channels={[]}
-          onFilterPress={() => setShowFilterModal(true)}
+          channels={channels}
+          channelsLoading={channelsLoading}
+          onChannelChange={setSelectedChannelId}
           onSearchPress={() => {
             activateSearch();
             if (!isOnHomepage) {
@@ -455,29 +457,27 @@ function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <BottomSheetModalProvider>
-        <SafeAreaProvider>
-          <PlaybackModeProvider>
-            <AudioProvider>
-              <LiveRadioProvider>
-                <VideoProvider>
-                  <ErrorBoundary>
-                    <SearchProvider>
-                      <FilterModalProvider>
-                        <HeaderVisibilityProvider headerHeight={140}>
-                          <TabBarVisibilityProvider tabBarHeight={150}>
-                            <RootLayoutContent />
-                          </TabBarVisibilityProvider>
-                        </HeaderVisibilityProvider>
-                      </FilterModalProvider>
-                    </SearchProvider>
-                  </ErrorBoundary>
-                </VideoProvider>
-              </LiveRadioProvider>
-            </AudioProvider>
-          </PlaybackModeProvider>
-        </SafeAreaProvider>
-      </BottomSheetModalProvider>
+      <SafeAreaProvider>
+        <PlaybackModeProvider>
+          <AudioProvider>
+            <LiveRadioProvider>
+              <VideoProvider>
+                <ErrorBoundary>
+                  <SearchProvider>
+                    <FilterModalProvider>
+                      <HeaderVisibilityProvider headerHeight={140}>
+                        <TabBarVisibilityProvider tabBarHeight={150}>
+                          <RootLayoutContent />
+                        </TabBarVisibilityProvider>
+                      </HeaderVisibilityProvider>
+                    </FilterModalProvider>
+                  </SearchProvider>
+                </ErrorBoundary>
+              </VideoProvider>
+            </LiveRadioProvider>
+          </AudioProvider>
+        </PlaybackModeProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }

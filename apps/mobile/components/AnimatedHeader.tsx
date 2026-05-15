@@ -3,7 +3,7 @@ import type { Channel, DurationOption, SortOption } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import React, { useEffect, useRef } from "react";
-import { Text, TextInput, View } from "react-native";
+import { Modal, Text, TextInput, TouchableWithoutFeedback, View } from "react-native";
 import Animated, {
     useAnimatedStyle,
     type SharedValue,
@@ -18,7 +18,8 @@ interface AnimatedHeaderProps {
   selectedChannelId: string | null;
   selectedDuration: DurationOption;
   channels: Channel[];
-  onFilterPress: () => void;
+  channelsLoading?: boolean;
+  onChannelChange: (channelId: string | null) => void;
   onSearchPress: () => void;
   disableFilter?: boolean;
   // Search mode props
@@ -36,7 +37,8 @@ export function AnimatedHeader({
   selectedChannelId,
   selectedDuration,
   channels,
-  onFilterPress,
+  channelsLoading = false,
+  onChannelChange,
   onSearchPress,
   disableFilter = false,
   isSearchActive = false,
@@ -46,6 +48,7 @@ export function AnimatedHeader({
   onSearchClose,
 }: AnimatedHeaderProps) {
   const inputRef = useRef<TextInput>(null);
+  const [showModeMenu, setShowModeMenu] = React.useState(false);
 
   // Auto-focus input when search mode activates
   useEffect(() => {
@@ -62,21 +65,97 @@ export function AnimatedHeader({
     };
   });
 
-  // Check if any non-default filters are active
-  const hasActiveFilters =
-    selectedSort !== "forYou" ||
-    selectedChannelId !== null ||
-    selectedDuration !== "all";
+  const hasSelectedMode = selectedChannelId !== null;
+  const sortedChannels = React.useMemo(
+    () => [...channels].sort((a, b) => a.name.localeCompare(b.name)),
+    [channels],
+  );
+  const modeOptions = React.useMemo(
+    () => [
+      { id: null, name: "All Modes" },
+      ...sortedChannels.map((channel) => ({
+        id: channel.id,
+        name: channel.modeName || channel.name,
+      })),
+    ],
+    [sortedChannels],
+  );
+  const currentMode =
+    modeOptions.find((option) => option.id === selectedChannelId) ||
+    modeOptions[0];
 
   return (
-    <Animated.View
-      style={[animatedStyle]}
-      className="absolute top-0 left-0 right-0 z-50"
-    >
-      <View
-        className="px-4 pt-safe-top pb-1"
-        style={{ backgroundColor: colors.background.primary }}
+    <>
+      <Modal
+        visible={showModeMenu}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowModeMenu(false)}
       >
+        <TouchableWithoutFeedback onPress={() => setShowModeMenu(false)}>
+          <View className="flex-1 bg-black/50">
+            <TouchableWithoutFeedback>
+              <View
+                className="absolute right-4 overflow-hidden rounded-xl border"
+                style={{
+                  top: 72,
+                  minWidth: 180,
+                  backgroundColor: colors.background.secondary,
+                  borderColor: colors.border.secondary,
+                }}
+              >
+                {modeOptions.map((option, index) => {
+                  const isSelected = selectedChannelId === option.id;
+                  return (
+                    <Pressable
+                      key={option.id ?? "all"}
+                      onPress={() => {
+                        onChannelChange(option.id);
+                        setShowModeMenu(false);
+                      }}
+                      disabled={channelsLoading}
+                      className="px-4 py-3 flex-row items-center justify-between"
+                      style={{
+                        borderBottomWidth: index < modeOptions.length - 1 ? 1 : 0,
+                        borderBottomColor: colors.border.secondary,
+                        backgroundColor: isSelected
+                          ? colors.accent.secondary
+                          : "transparent",
+                        opacity: channelsLoading ? 0.6 : 1,
+                      }}
+                    >
+                      <Text
+                        className="font-medium"
+                        style={{
+                          color: isSelected ? colors.text.primary : "#ffffff",
+                        }}
+                      >
+                        {option.name}
+                      </Text>
+                      {isSelected && (
+                        <Ionicons
+                          name="checkmark"
+                          size={18}
+                          color={colors.text.primary}
+                        />
+                      )}
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      <Animated.View
+        style={[animatedStyle]}
+        className="absolute top-0 left-0 right-0 z-50"
+      >
+        <View
+          className="px-4 pt-safe-top pb-3"
+          style={{ backgroundColor: colors.background.primary }}
+        >
         {isSearchActive ? (
           /* Search Mode */
           <View className="flex-row items-center mb-3">
@@ -151,58 +230,64 @@ export function AnimatedHeader({
         ) : (
           /* Normal Mode */
           <View className="flex-row items-center justify-between mb-3">
-            {/* Logo */}
-            <View className="flex-row items-center gap-2">
-              <View
-                className="rounded-full overflow-hidden"
+            <View
+              className="rounded-full overflow-hidden"
+              style={{ width: 32, height: 32 }}
+            >
+              <Image
+                source={require("@/assets/images/android-icon-foreground.png")}
                 style={{ width: 32, height: 32 }}
-              >
-                <Image
-                  source={require("@/assets/images/android-icon-foreground.png")}
-                  style={{ width: 32, height: 32 }}
-                  contentFit="cover"
-                />
-              </View>
-              <Text
-                className="text-lg font-semibold"
-                style={{ color: colors.text.primary }}
-              >
-                Seerat E Mustafa
-              </Text>
+                contentFit="cover"
+              />
             </View>
 
-            {/* Action Icons */}
-            <View className="flex-row items-center gap-4">
-              {/* Search */}
+            <View className="flex-1 flex-row items-center justify-end gap-3 ml-3">
               <Pressable
                 onPress={onSearchPress}
                 accessibilityLabel="Search"
                 accessibilityRole="button"
               >
-                <Ionicons name="search" size={24} color={colors.text.primary} />
+                <Ionicons
+                  name="search"
+                  size={24}
+                  color={colors.text.primary}
+                />
               </Pressable>
 
-              {/* Filter */}
               <Pressable
-                onPress={onFilterPress}
-                accessibilityLabel="Open filters"
+                onPress={() => setShowModeMenu((prev) => !prev)}
+                className="rounded-xl flex-row items-center px-3"
+                style={{
+                  minHeight: 38,
+                  backgroundColor: hasSelectedMode
+                    ? colors.accent.primary
+                    : colors.background.secondary,
+                  opacity: disableFilter ? 0.3 : 1,
+                }}
+                accessibilityLabel="Select mode"
                 accessibilityRole="button"
                 disabled={disableFilter}
-                style={{ opacity: disableFilter ? 0.3 : 1 }}
               >
+                <Text
+                  className="text-sm font-semibold"
+                  style={{
+                    color: hasSelectedMode ? "#ffffff" : colors.text.primary,
+                  }}
+                >
+                  {currentMode.name}
+                </Text>
                 <Ionicons
-                  name="options-outline"
-                  size={24}
-                  color={hasActiveFilters ? "#3b82f6" : colors.text.primary}
+                  name={showModeMenu ? "chevron-up" : "chevron-down"}
+                  size={18}
+                  color={hasSelectedMode ? "#ffffff" : colors.text.primary}
+                  style={{ marginLeft: 6 }}
                 />
-                {hasActiveFilters && (
-                  <View className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full" />
-                )}
               </Pressable>
             </View>
           </View>
         )}
-      </View>
-    </Animated.View>
+        </View>
+      </Animated.View>
+    </>
   );
 }

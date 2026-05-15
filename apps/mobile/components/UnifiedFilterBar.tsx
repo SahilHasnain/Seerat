@@ -1,18 +1,8 @@
 import { colors } from "@/constants/theme";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  BottomSheetBackdrop,
-  BottomSheetModal,
-  BottomSheetScrollView,
-} from "@gorhom/bottom-sheet";
-import type {
-  Channel,
-  DurationOption,
-  SortOption,
-} from "@naat-collection/shared";
-import React, { useCallback, useMemo, useRef, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import type { Channel, DurationOption, SortOption } from "@naat-collection/shared";
+import React, { useEffect, useMemo, useState } from "react";
+import { Text, View } from "react-native";
 import Pressable from "./ResponsivePressable";
 
 interface UnifiedFilterBarProps {
@@ -46,326 +36,171 @@ const UnifiedFilterBar: React.FC<UnifiedFilterBarProps> = ({
   onExternalClose,
   hideChips = false,
 }) => {
-  const bottomSheetRef = useRef<BottomSheetModal>(null);
-  const [activeTab, setActiveTab] = useState<"sort" | "channel" | "duration">("sort");
-  const snapPoints = useMemo(() => ["55%"], []);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Open sheet when external trigger fires
-  React.useEffect(() => {
+  useEffect(() => {
     if (externalOpen) {
-      bottomSheetRef.current?.present();
+      setIsDropdownOpen(true);
     }
   }, [externalOpen]);
 
-  const handleClose = useCallback(() => {
-    bottomSheetRef.current?.dismiss();
+  const closeDropdown = React.useCallback(() => {
+    setIsDropdownOpen(false);
     onExternalClose?.();
   }, [onExternalClose]);
 
-  const handleDismiss = useCallback(() => {
-    onExternalClose?.();
-  }, [onExternalClose]);
-
-  const openSheet = useCallback(
-    (tab: "sort" | "channel" | "duration") => {
-      setActiveTab(tab);
-      bottomSheetRef.current?.present();
-    },
-    [],
+  const sortedChannels = useMemo(
+    () => [...channels].sort((a, b) => a.name.localeCompare(b.name)),
+    [channels],
   );
 
-  const renderBackdrop = useCallback(
-    (props: any) => (
-      <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.5} />
-    ),
-    [],
+  const modeOptions = useMemo(
+    () => [
+      {
+        id: null,
+        name: "All Modes",
+        iconName: "apps-outline" as keyof typeof Ionicons.glyphMap,
+      },
+      ...sortedChannels.map((channel) => ({
+        id: channel.id,
+        name: channel.name,
+        iconName: (channel.isOther
+          ? "folder-open-outline"
+          : "radio-outline") as keyof typeof Ionicons.glyphMap,
+      })),
+    ],
+    [sortedChannels],
   );
 
-  // --- Filter data ---
+  const currentMode =
+    modeOptions.find((option) => option.id === selectedChannelId) ||
+    modeOptions[0];
+  const hasSelectedMode = selectedChannelId !== null;
 
-  const sortFilters: { value: SortOption; label: string; iconName: keyof typeof Ionicons.glyphMap }[] = [
-    { value: "forYou", label: "For You", iconName: "sparkles" },
-    { value: "latest", label: "Latest", iconName: "time" },
-    { value: "popular", label: "Popular", iconName: "flame" },
-    { value: "oldest", label: "Oldest", iconName: "calendar" },
-  ];
-
-  const durationFilters: { value: DurationOption; label: string; iconName: keyof typeof Ionicons.glyphMap }[] = [
-    { value: "all", label: "All", iconName: "infinite" },
-    { value: "short", label: "< 5 min", iconName: "flash" },
-    { value: "medium", label: "5-15 min", iconName: "hourglass" },
-    { value: "long", label: "> 15 min", iconName: "film" },
-  ];
-
-  const mainChannels = channels.filter((ch) => !ch.isOther);
-  const otherChannels = channels.filter((ch) => ch.isOther);
-  const sortedMainChannels = [...mainChannels].sort((a, b) => a.name.localeCompare(b.name));
-
-  const channelOptions: { id: string | null; name: string; iconName: keyof typeof Ionicons.glyphMap; type: "all" | "channel" | "other" }[] = [
-    { id: null, name: "All", iconName: "globe", type: "all" },
-    ...sortedMainChannels.map((ch) => ({ id: ch.id, name: ch.name, iconName: "tv" as keyof typeof Ionicons.glyphMap, type: "channel" as const })),
-  ];
-  if (otherChannels.length > 0) {
-    channelOptions.push({ id: "other", name: "Other", iconName: "folder", type: "other" });
+  if (hideChips && !isDropdownOpen) {
+    return null;
   }
-
-  const isOtherSelected = selectedChannelId !== null && otherChannels.some((ch) => ch.id === selectedChannelId);
-  const currentSort = sortFilters.find((f) => f.value === selectedSort);
-  let currentChannel: { id: string | null; name: string; iconName: keyof typeof Ionicons.glyphMap };
-  if (isOtherSelected) {
-    currentChannel = { id: "other", name: "Other", iconName: "folder" };
-  } else {
-    currentChannel = channelOptions.find((c) => c.id === selectedChannelId) || channelOptions[0];
-  }
-  const currentDuration = durationFilters.find((f) => f.value === selectedDuration);
-  const hasActiveFilters = selectedSort !== "forYou" || selectedChannelId !== null || selectedDuration !== "all" || pureOnly;
 
   return (
-    <>
-      {/* Compact Filter Chips */}
-      {!hideChips && (
-        <View style={{ backgroundColor: colors.background.primary }}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12 }}
+    <View style={{ paddingHorizontal: 16, paddingBottom: 4 }}>
+      <View className="flex-row items-center">
+        <Pressable
+          onPress={() => setIsDropdownOpen((prev) => !prev)}
+          className="flex-1 px-4 py-3 rounded-2xl flex-row items-center"
+          style={{
+            minHeight: 48,
+            backgroundColor: isDropdownOpen || hasSelectedMode
+              ? colors.accent.secondary
+              : colors.background.tertiary,
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Select mode"
+        >
+          <Ionicons
+            name={currentMode.iconName}
+            size={18}
+            color={hasSelectedMode ? colors.text.primary : "#d4d4d8"}
+          />
+          <View className="ml-3 flex-1">
+            <Text
+              className="text-[11px] uppercase tracking-[1px]"
+              style={{
+                color: hasSelectedMode ? "rgba(255,255,255,0.75)" : "#8f95a3",
+              }}
+            >
+              Mode
+            </Text>
+            <Text
+              className="font-semibold text-sm"
+              style={{
+                color: hasSelectedMode ? colors.text.primary : "#d4d4d8",
+              }}
+            >
+              {currentMode.name}
+            </Text>
+          </View>
+          <Ionicons
+            name={isDropdownOpen ? "chevron-up" : "chevron-down"}
+            size={18}
+            color={hasSelectedMode ? colors.text.primary : "#d4d4d8"}
+          />
+        </Pressable>
+
+        {hasSelectedMode && (
+          <Pressable
+            onPress={() => {
+              onChannelChange(null);
+              closeDropdown();
+            }}
+            className="ml-3 px-4 py-3 rounded-2xl flex-row items-center"
+            style={{
+              minHeight: 48,
+              backgroundColor: colors.background.secondary,
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Clear selected mode"
           >
-            {/* Sort Chip */}
-            <Pressable
-              onPress={() => openSheet("sort")}
-              className="mr-3 px-4 py-2.5 rounded-full flex-row items-center"
-              style={{ backgroundColor: selectedSort !== "forYou" ? colors.accent.secondary : colors.background.tertiary, minHeight: 44 }}
-            >
-              <Ionicons name={currentSort?.iconName || "sparkles"} size={16} color={selectedSort !== "forYou" ? colors.text.primary : "#d4d4d8"} />
-              <Text className="font-semibold text-sm ml-2" style={{ color: selectedSort !== "forYou" ? colors.text.primary : "#d4d4d8" }}>{currentSort?.label}</Text>
-            </Pressable>
+            <Ionicons name="close-circle" size={18} color="#d4d4d8" />
+          </Pressable>
+        )}
+      </View>
 
-            {/* Channel Chip */}
-            <Pressable
-              onPress={() => openSheet("channel")}
-              className="mr-3 px-4 py-2.5 rounded-full flex-row items-center"
-              style={{ backgroundColor: selectedChannelId ? colors.accent.secondary : colors.background.tertiary, minHeight: 44 }}
-            >
-              <Ionicons name={currentChannel?.iconName || "globe"} size={16} color={selectedChannelId ? colors.text.primary : "#d4d4d8"} />
-              <Text className="font-semibold text-sm ml-2" style={{ color: selectedChannelId ? colors.text.primary : "#d4d4d8" }}>{currentChannel?.name}</Text>
-            </Pressable>
-
-            {/* Duration Chip */}
-            <Pressable
-              onPress={() => openSheet("duration")}
-              className="mr-3 px-4 py-2.5 rounded-full flex-row items-center"
-              style={{ backgroundColor: selectedDuration !== "all" ? colors.accent.secondary : colors.background.tertiary, minHeight: 44 }}
-            >
-              <Ionicons name={currentDuration?.iconName || "infinite"} size={16} color={selectedDuration !== "all" ? colors.text.primary : "#d4d4d8"} />
-              <Text className="font-semibold text-sm ml-2" style={{ color: selectedDuration !== "all" ? colors.text.primary : "#d4d4d8" }}>{currentDuration?.label}</Text>
-            </Pressable>
-
-            {/* Pure Chip */}
-            <Pressable
-              onPress={() => onPureOnlyChange?.(!pureOnly)}
-              className="mr-3 px-4 py-2.5 rounded-full flex-row items-center"
-              style={{ backgroundColor: pureOnly ? colors.accent.primary : colors.background.tertiary, minHeight: 44 }}
-            >
-              <Ionicons name="cut-outline" size={16} color={pureOnly ? "#fff" : "#d4d4d8"} />
-              <Text className="font-semibold text-sm ml-2" style={{ color: pureOnly ? "#fff" : "#d4d4d8" }}>Pure</Text>
-            </Pressable>
-
-            {/* Clear */}
-            {hasActiveFilters && (
+      {isDropdownOpen && (
+        <View
+          className="mt-3 rounded-3xl overflow-hidden"
+          style={{
+            backgroundColor: colors.background.secondary,
+            borderWidth: 1,
+            borderColor: colors.border.secondary,
+          }}
+        >
+          {modeOptions.map((option, index) => {
+            const isSelected = selectedChannelId === option.id;
+            return (
               <Pressable
-                onPress={() => { onSortChange("forYou"); onChannelChange(null); onDurationChange("all"); onPureOnlyChange?.(false); }}
-                className="px-4 py-2.5 rounded-full flex-row items-center"
-                style={{ backgroundColor: colors.background.secondary, minHeight: 44 }}
+                key={option.id ?? "all"}
+                onPress={() => {
+                  onChannelChange(option.id);
+                  closeDropdown();
+                }}
+                disabled={channelsLoading}
+                className="px-4 py-4 flex-row items-center"
+                style={{
+                  minHeight: 54,
+                  backgroundColor: isSelected
+                    ? colors.accent.secondary
+                    : "transparent",
+                  borderTopWidth: index === 0 ? 0 : 1,
+                  borderTopColor: colors.border.secondary,
+                  opacity: channelsLoading ? 0.6 : 1,
+                }}
               >
-                <Ionicons name="close-circle" size={16} color="#d4d4d8" />
-                <Text className="font-semibold text-sm text-neutral-300 ml-2">Clear</Text>
+                <Ionicons
+                  name={option.iconName}
+                  size={18}
+                  color={isSelected ? colors.text.primary : "#cfd4dc"}
+                />
+                <Text
+                  className="flex-1 ml-3 font-semibold text-sm"
+                  style={{
+                    color: isSelected ? colors.text.primary : "#e2e8f0",
+                  }}
+                >
+                  {option.name}
+                </Text>
+                {isSelected && (
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={18}
+                    color={colors.text.primary}
+                  />
+                )}
               </Pressable>
-            )}
-          </ScrollView>
+            );
+          })}
         </View>
       )}
-
-      {/* Bottom Sheet Modal — renders via portal, works regardless of nesting */}
-      <BottomSheetModal
-        ref={bottomSheetRef}
-        snapPoints={snapPoints}
-        enablePanDownToClose
-        onDismiss={handleDismiss}
-        backdropComponent={renderBackdrop}
-        handleIndicatorStyle={{ backgroundColor: colors.text.tertiary }}
-        backgroundStyle={{ backgroundColor: colors.background.secondary }}
-      >
-        <SafeAreaView edges={["bottom"]} className="flex-1">
-          {/* Sheet Header */}
-          <View
-            className="flex-row items-center justify-between px-6 py-3 border-b"
-            style={{ borderBottomColor: colors.border.secondary }}
-          >
-            <Text className="text-xl font-bold" style={{ color: colors.text.primary }}>Filters</Text>
-            <View className="flex-row items-center">
-              <Pressable
-                onPress={() => onPureOnlyChange?.(!pureOnly)}
-                className="flex-row items-center mr-4"
-                style={{ minHeight: 44 }}
-                accessibilityRole="switch"
-                accessibilityState={{ checked: pureOnly }}
-                accessibilityLabel="Pure only filter"
-              >
-                <Ionicons name="cut-outline" size={16} color={pureOnly ? colors.accent.primary : colors.text.tertiary} style={{ marginRight: 6 }} />
-                <Text className="text-sm font-semibold" style={{ color: pureOnly ? colors.accent.primary : colors.text.tertiary, marginRight: 8 }}>Pure</Text>
-                <View style={{ width: 40, height: 22, borderRadius: 11, backgroundColor: pureOnly ? colors.accent.primary : colors.background.elevated, justifyContent: "center", paddingHorizontal: 2 }}>
-                  <View style={{ width: 18, height: 18, borderRadius: 9, backgroundColor: "#fff", alignSelf: pureOnly ? "flex-end" : "flex-start" }} />
-                </View>
-              </Pressable>
-              <Pressable onPress={handleClose} style={{ minHeight: 44, minWidth: 44, justifyContent: "center", alignItems: "center" }}>
-                <Ionicons name="close" size={24} color={colors.text.secondary} />
-              </Pressable>
-            </View>
-          </View>
-
-          {/* Tabs */}
-          <View className="flex-row border-b" style={{ borderBottomColor: colors.border.secondary }}>
-            {(["sort", "channel", "duration"] as const).map((tab) => (
-              <Pressable
-                key={tab}
-                onPress={() => setActiveTab(tab)}
-                className={`flex-1 py-4 ${activeTab === tab ? "border-b-2 border-blue-500" : ""}`}
-                style={{ minHeight: 44 }}
-              >
-                <Text className={`text-center font-semibold text-base ${activeTab === tab ? "text-blue-500" : "text-neutral-400"}`}>
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-
-          {/* Content */}
-          <BottomSheetScrollView showsVerticalScrollIndicator={false}>
-            {activeTab === "sort" && (
-              <View className="p-4">
-                {sortFilters.map((filter) => {
-                  const isSelected = selectedSort === filter.value;
-                  return (
-                    <Pressable
-                      key={filter.value}
-                      onPress={() => { onSortChange(filter.value); handleClose(); }}
-                      className="flex-row items-center p-4 rounded-xl mb-2"
-                      style={{ backgroundColor: isSelected ? colors.accent.secondary : colors.background.tertiary, minHeight: 56 }}
-                    >
-                      <Ionicons name={filter.iconName} size={22} color={colors.text.primary} />
-                      <Text className="flex-1 font-semibold text-base ml-3" style={{ color: isSelected ? colors.text.primary : "#d4d4d4" }}>{filter.label}</Text>
-                      {isSelected && <Ionicons name="checkmark-circle" size={22} color={colors.text.primary} />}
-                    </Pressable>
-                  );
-                })}
-              </View>
-            )}
-
-            {activeTab === "channel" && (
-              <View className="p-4">
-                {channelOptions.map((option) => {
-                  const isSelected =
-                    option.type === "other"
-                      ? isOtherSelected
-                      : selectedChannelId === option.id;
-                  return (
-                    <Pressable
-                      key={option.id || "all"}
-                      onPress={() => {
-                        if (option.type === "other" && otherChannels.length > 0) {
-                          onChannelChange(otherChannels[0].id);
-                        } else {
-                          onChannelChange(option.id);
-                        }
-                        handleClose();
-                      }}
-                      disabled={channelsLoading}
-                      className="flex-row items-center p-4 rounded-xl mb-2"
-                      style={{
-                        backgroundColor: isSelected
-                          ? colors.accent.secondary
-                          : colors.background.tertiary,
-                        minHeight: 56,
-                      }}
-                    >
-                      <Ionicons
-                        name={option.iconName}
-                        size={22}
-                        color={colors.text.primary}
-                      />
-                      <Text
-                        className="flex-1 font-semibold text-base ml-3"
-                        style={{
-                          color: isSelected
-                            ? colors.text.primary
-                            : "#d4d4d4",
-                        }}
-                      >
-                        {option.name}
-                      </Text>
-                      {isSelected && (
-                        <Ionicons
-                          name="checkmark-circle"
-                          size={22}
-                          color={colors.text.primary}
-                        />
-                      )}
-                    </Pressable>
-                  );
-                })}
-              </View>
-            )}
-
-            {activeTab === "duration" && (
-              <View className="p-4">
-                {durationFilters.map((filter) => {
-                  const isSelected = selectedDuration === filter.value;
-                  return (
-                    <Pressable
-                      key={filter.value}
-                      onPress={() => {
-                        onDurationChange(filter.value);
-                        handleClose();
-                      }}
-                      className="flex-row items-center p-4 rounded-xl mb-2"
-                      style={{
-                        backgroundColor: isSelected
-                          ? colors.accent.secondary
-                          : colors.background.tertiary,
-                        minHeight: 56,
-                      }}
-                    >
-                      <Ionicons
-                        name={filter.iconName}
-                        size={22}
-                        color={colors.text.primary}
-                      />
-                      <Text
-                        className="flex-1 font-semibold text-base ml-3"
-                        style={{
-                          color: isSelected
-                            ? colors.text.primary
-                            : "#d4d4d4",
-                        }}
-                      >
-                        {filter.label}
-                      </Text>
-                      {isSelected && (
-                        <Ionicons
-                          name="checkmark-circle"
-                          size={22}
-                          color={colors.text.primary}
-                        />
-                      )}
-                    </Pressable>
-                  );
-                })}
-              </View>
-            )}
-          </BottomSheetScrollView>
-        </SafeAreaView>
-      </BottomSheetModal>
-    </>
+    </View>
   );
 };
 

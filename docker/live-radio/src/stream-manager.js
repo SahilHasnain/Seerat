@@ -86,31 +86,28 @@ class StreamManager {
         .setKey(process.env.APPWRITE_API_KEY);
 
       const databases = new Databases(client);
-      
-      // Fetch naats with cutAudio available and radio attribute true
-      const response = await databases.listDocuments(
-        process.env.DATABASE_ID,
-        process.env.NAATS_COLLECTION_ID, // Use environment variable for collection ID
-        [
-          Query.limit(100),
-          Query.lessThanEqual("duration", 1200), // 20 minutes max
-          Query.isNotNull("cutAudio"),
-          Query.equal("radio", true),
-          Query.or([
-            Query.equal("exclude", false),
-            Query.isNull("exclude")
-          ]),
-          Query.select(["$id", "title", "cutAudio", "duration"])
-        ]
-      );
-      
-      // Convert to playlist format
-      this.currentPlaylist = response.documents.map(naat => ({
-        id: naat.$id,
-        title: naat.title,
-        audioUrl: `https://sgp.cloud.appwrite.io/v1/storage/buckets/audio-files/files/${naat.cutAudio}/view?project=695bb97700213f4ef5dd`,
-        duration: naat.duration
-      }));
+
+      const response = await this.fetchAllNaats(databases, Query);
+      const endpoint = process.env.APPWRITE_ENDPOINT || 'https://sgp.cloud.appwrite.io/v1';
+      const projectId = process.env.APPWRITE_PROJECT_ID;
+      const bucketId = process.env.AUDIO_BUCKET_ID || 'audio-files';
+
+      this.currentPlaylist = response.documents
+        .map((naat) => {
+          const audioFileId = naat.audioId || naat.cutAudio;
+
+          if (!audioFileId) {
+            return null;
+          }
+
+          return {
+            id: naat.$id,
+            title: naat.title,
+            audioUrl: `${endpoint}/storage/buckets/${bucketId}/files/${audioFileId}/view?project=${projectId}`,
+            duration: naat.duration
+          };
+        })
+        .filter(Boolean);
       
       console.log(`Loaded ${this.currentPlaylist.length} naats for playlist`);
       await this.generateFFmpegPlaylist();
@@ -118,6 +115,34 @@ class StreamManager {
     } catch (error) {
       console.error('Error updating playlist:', error);
     }
+  }
+
+  async fetchAllNaats(databases, Query) {
+    const batchSize = 100;
+    const documents = [];
+    let offset = 0;
+
+    while (true) {
+      const response = await databases.listDocuments(
+        process.env.DATABASE_ID,
+        process.env.NAATS_COLLECTION_ID,
+        [
+          Query.limit(batchSize),
+          Query.offset(offset),
+          Query.select(["$id", "title", "audioId", "cutAudio", "duration"])
+        ]
+      );
+
+      documents.push(...response.documents);
+
+      if (response.documents.length < batchSize) {
+        break;
+      }
+
+      offset += batchSize;
+    }
+
+    return { documents };
   }
 
   async generateFFmpegPlaylist() {

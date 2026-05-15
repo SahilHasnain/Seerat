@@ -27,6 +27,7 @@ export interface Naat {
 export interface Channel {
   id: string;
   name: string;
+  modeName?: string;
   isOfficial?: boolean;
   isOther?: boolean;
   type?: "channel" | "playlist";
@@ -37,6 +38,7 @@ export interface ChannelDocument {
   $id: string;
   channelId: string;
   channelName: string;
+  modeName?: string;
   isOfficial?: boolean;
   isOther?: boolean;
   type?: "channel" | "playlist";

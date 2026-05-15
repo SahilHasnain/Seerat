@@ -374,6 +374,15 @@ async function ensureChannelsSchema(databases) {
       true
     )
   );
+  await ensureAttribute(databases, CHANNELS_COLLECTION_ID, "modeName", () =>
+    databases.createStringAttribute(
+      DATABASE_ID,
+      CHANNELS_COLLECTION_ID,
+      "modeName",
+      100,
+      false
+    )
+  );
   await ensureAttribute(databases, CHANNELS_COLLECTION_ID, "type", () =>
     databases.createStringAttribute(
       DATABASE_ID,
