@@ -1,0 +1,543 @@
+import Pressable from "@/components/ResponsivePressable";
+import { colors, shadows } from "@/constants/theme";
+import { AudioMetadata, useAudioPlayer } from "@/contexts/AudioContext";
+import { useTabBarVisibility } from "@/contexts/TabBarVisibilityContext.animated";
+import { useVideoPlayer } from "@/contexts/VideoContext";
+import { appwriteService } from "@/services/appwrite";
+import { audioDownloadService } from "@/services/audioDownload";
+import { storageService } from "@/services/storage";
+import { Ionicons } from "@expo/vector-icons";
+import Slider from "@react-native-community/slider";
+import { useFocusEffect } from "@react-navigation/native";
+import { LinearGradient } from "expo-linear-gradient";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import * as ScreenOrientation from "expo-screen-orientation";
+import React from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import YoutubePlayer from "react-native-youtube-iframe";
+
+export default function VideoScreen() {
+  const router = useRouter();
+  const params = useLocalSearchParams<{
+    videoUrl: string;
+    title?: string;
+    channelName?: string;
+    thumbnailUrl?: string;
+    duration?: string;
+    youtubeId?: string;
+    audioId?: string;
+    isFallback?: string;
+  }>();
+
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [isFullscreen, setIsFullscreen] = React.useState(false);
+  const [audioLoading, setAudioLoading] = React.useState(false);
+
+  // Get contexts
+  const { loadAndPlay } = useAudioPlayer();
+  const {
+    loadVideo,
+    clearVideo,
+    setPlaying,
+    setPosition: setContextPosition,
+    setDuration: setContextDuration,
+    handleVideoEnd,
+    isRepeatEnabled,
+    toggleRepeat,
+  } = useVideoPlayer();
+  const { showTabBar } = useTabBarVisibility();
+
+  // Force tab bar to show when this screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      // Show tab bar and reset scroll tracking state
+      showTabBar();
+    }, [showTabBar]),
+  );
+
+  // Local video playback state (for UI)
+  const [videoPlaying, setVideoPlaying] = React.useState(false);
+  const [videoDuration, setVideoDuration] = React.useState(0);
+  const [videoPosition, setVideoPosition] = React.useState(0);
+  const playerRef = React.useRef<any>(null);
+
+  // Parse params
+  const videoUrl = params.videoUrl;
+  const title = params.title;
+  const channelName = params.channelName;
+  const thumbnailUrl = params.thumbnailUrl;
+  const dbDuration = Number(params.duration || 0);
+  const propYoutubeId = params.youtubeId;
+  const propAudioId = params.audioId;
+  const isFallback = params.isFallback === "true";
+
+  // Extract YouTube video ID from URL
+  const getYouTubeId = (url: string): string => {
+    const regExp =
+      /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+    const match = url.match(regExp);
+    return match && match[7].length === 11 ? match[7] : "";
+  };
+
+  // Format seconds to MM:SS
+  const formatTime = (seconds: number): string => {
+    const minutes = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${minutes}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const videoId = getYouTubeId(videoUrl);
+
+  // Load video on mount, save video preference, and autoplay
+  React.useEffect(() => {
+    setIsLoading(true);
+    setVideoPosition(0);
+    setVideoDuration(dbDuration);
+    setContextPosition(0);
+    setContextDuration(dbDuration);
+    // Start playing immediately (autoplay)
+    setVideoPlaying(true);
+
+    // Load video into context
+    if (title && channelName && thumbnailUrl) {
+      loadVideo({
+        videoUrl,
+        videoId: getYouTubeId(videoUrl),
+        title,
+        channelName,
+        thumbnailUrl,
+        youtubeId: propYoutubeId,
+        audioId: propAudioId,
+      });
+    }
+
+    // Only save video mode preference if this is NOT a fallback
+    if (!isFallback) {
+      storageService.savePlaybackMode("video").catch((error) => {
+        console.error("Failed to save video mode preference:", error);
+      });
+    }
+
+    // Fallback: Clear loading state after 5 seconds if still loading
+    const loadingTimeout = setTimeout(() => {
+      if (isLoading) {
+        console.log("[VideoScreen] Loading timeout - clearing loading state");
+        setIsLoading(false);
+      }
+    }, 5000);
+
+    // Cleanup on unmount
+    return () => {
+      clearTimeout(loadingTimeout);
+      clearVideo();
+    };
+  }, [
+    channelName,
+    clearVideo,
+    isFallback,
+    loadVideo,
+    propAudioId,
+    propYoutubeId,
+    setContextDuration,
+    setContextPosition,
+    thumbnailUrl,
+    title,
+    dbDuration,
+    videoUrl,
+  ]);
+
+  // Switch to audio mode - loads audio via AudioContext and navigates back
+  const switchToAudio = async () => {
+    if (!propAudioId) {
+      Alert.alert("Audio Not Available", "No audio ID provided.", [
+        { text: "OK" },
+      ]);
+      return;
+    }
+
+    try {
+      setAudioLoading(true);
+
+      // Check if audio is downloaded first
+      let audioUrl: string;
+      let isLocalFile = false;
+
+      const downloaded = await audioDownloadService.isDownloaded(propAudioId);
+
+      if (downloaded) {
+        // Use local file
+        audioUrl = audioDownloadService.getLocalPath(propAudioId);
+        isLocalFile = true;
+      } else {
+        // Fetch from storage
+        const response = await appwriteService.getAudioUrl(propAudioId);
+
+        if (response.success && response.audioUrl) {
+          audioUrl = response.audioUrl;
+        } else {
+          const errorMessage =
+            response.error || "Audio not available for this naat.";
+          Alert.alert("Audio Not Available", errorMessage, [{ text: "OK" }]);
+          setAudioLoading(false);
+          return;
+        }
+      }
+
+      // Load audio via AudioContext
+      const audioMetadata: AudioMetadata = {
+        audioUrl,
+        title: title || "Unknown Title",
+        channelName: channelName || "Unknown Channel",
+        thumbnailUrl: thumbnailUrl || "",
+        isLocalFile,
+        audioId: propAudioId,
+        youtubeId: propYoutubeId,
+      };
+
+      await loadAndPlay(audioMetadata);
+
+      // Save preference
+      await storageService.savePlaybackMode("audio");
+      setAudioLoading(false);
+
+      // Navigate back - audio will continue playing via MiniPlayer
+      router.back();
+    } catch (err) {
+      const error =
+        err instanceof Error ? err : new Error("Failed to load audio");
+      Alert.alert("Audio Error", error.message, [{ text: "OK" }]);
+      setAudioLoading(false);
+    }
+  };
+
+  // Handle fullscreen changes
+  const handleFullscreenChange = async (isFullscreen: boolean) => {
+    setIsFullscreen(isFullscreen);
+
+    if (isFullscreen) {
+      await ScreenOrientation.lockAsync(
+        ScreenOrientation.OrientationLock.LANDSCAPE,
+      );
+    } else {
+      await ScreenOrientation.unlockAsync();
+    }
+  };
+
+  // Cleanup: unlock orientation when screen unmounts
+  React.useEffect(() => {
+    return () => {
+      if (isFullscreen) {
+        ScreenOrientation.unlockAsync();
+      }
+    };
+  }, [isFullscreen]);
+
+  // Update video position periodically and check duration
+  React.useEffect(() => {
+    const interval = setInterval(async () => {
+      if (playerRef.current) {
+        try {
+          const currentTime = await playerRef.current.getCurrentTime();
+          setVideoPosition(currentTime);
+          // Update context position
+          setContextPosition(currentTime);
+
+          // If duration is still 0, try to get it
+          if (dbDuration === 0 && videoDuration === 0) {
+            try {
+              const duration = await playerRef.current.getDuration();
+              if (duration > 0) {
+                console.log("[VideoScreen] Video duration from interval:", duration);
+                setVideoDuration(duration);
+                setContextDuration(duration);
+              }
+            } catch (durationError) {
+              // Ignore duration errors in interval
+            }
+          }
+        } catch {
+          // Ignore errors
+        }
+      }
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [dbDuration, setContextPosition, videoDuration, setContextDuration]);
+
+  // Handle video state changes
+  const onStateChange = React.useCallback(
+    (state: string) => {
+      // Clear loading state when video starts playing
+      if (state === "playing") {
+        setIsLoading(false);
+        setVideoPlaying(true);
+        setPlaying(true);
+
+        // Fallback: Get duration when video starts playing if not already set
+        if (dbDuration === 0 && videoDuration === 0 && playerRef.current) {
+          setTimeout(async () => {
+            try {
+              const duration = await playerRef.current.getDuration();
+              console.log("[VideoScreen] Video duration from playing state:", duration);
+              if (duration > 0) {
+                setVideoDuration(duration);
+                setContextDuration(duration);
+              }
+            } catch (error) {
+              console.error("[VideoScreen] Error getting duration from playing state:", error);
+            }
+          }, 1000);
+        }
+      } else if (state === "paused") {
+        setVideoPlaying(false);
+        setPlaying(false);
+      } else if (state === "ended") {
+        setVideoPlaying(false);
+        setPlaying(false);
+
+        // Handle repeat manually
+        if (isRepeatEnabled && playerRef.current) {
+          console.log("[VideoScreen] Repeating video");
+          // Seek to start and play again
+          setTimeout(async () => {
+            try {
+              await playerRef.current.seekTo(0, true);
+              setVideoPlaying(true);
+              setPlaying(true);
+            } catch (error) {
+              console.error("[VideoScreen] Error repeating video:", error);
+            }
+          }, 100); // Small delay to ensure video is ready
+        } else {
+          // Notify context that video ended (for autoplay)
+          handleVideoEnd();
+        }
+      }
+    },
+    [dbDuration, setPlaying, handleVideoEnd, isRepeatEnabled, videoDuration, setContextDuration],
+  );
+
+  // Seek to position in video
+  const seekToPosition = async (seconds: number) => {
+    if (playerRef.current) {
+      try {
+        await playerRef.current.seekTo(seconds, true);
+        setVideoPosition(seconds);
+      } catch {
+        // Ignore errors
+      }
+    }
+  };
+
+  return (
+    <>
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={colors.background.primary}
+      />
+
+      <SafeAreaView edges={["bottom", "top"]} className="flex-1 bg-black">
+        <LinearGradient
+          pointerEvents="none"
+          colors={[
+            "rgba(0, 0, 0, 0.46)",
+            "rgba(6, 10, 20, 0.24)",
+            "rgba(0, 0, 0, 0.12)",
+            "rgba(0, 0, 0, 0.36)",
+          ]}
+          locations={[0, 0.18, 0.58, 1]}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+
+        <View className="flex-1">
+          <View
+            className="flex-1 bg-neutral-900 overflow-hidden"
+            style={shadows.lg}
+          >
+            {/* Video Player */}
+            <View className="flex-1 bg-black">
+              <View className="relative flex-1">
+                <YoutubePlayer
+                  ref={playerRef}
+                  height={300}
+                  videoId={videoId}
+                  play={videoPlaying}
+                  onReady={() => {
+                    console.log("[VideoScreen] Video ready");
+                    setIsLoading(false);
+                    if (dbDuration === 0 && playerRef.current) {
+                      // Add a small delay to ensure video is fully loaded
+                      setTimeout(async () => {
+                        try {
+                          const duration = await playerRef.current.getDuration();
+                          console.log("[VideoScreen] Video duration:", duration);
+                          setVideoDuration(duration);
+                          // Update context duration
+                          setContextDuration(duration);
+                        } catch (error) {
+                          console.error("[VideoScreen] Error getting duration:", error);
+                          // Fallback: try again after another delay
+                          setTimeout(async () => {
+                            try {
+                              const duration = await playerRef.current.getDuration();
+                              console.log("[VideoScreen] Video duration (retry):", duration);
+                              setVideoDuration(duration);
+                              setContextDuration(duration);
+                            } catch (retryError) {
+                              console.error("[VideoScreen] Error getting duration (retry):", retryError);
+                            }
+                          }, 1000);
+                        }
+                      }, 500);
+                    }
+                  }}
+                  onChangeState={onStateChange}
+                  onFullScreenChange={handleFullscreenChange}
+                  onError={() => {
+                    setIsLoading(false);
+                    Alert.alert(
+                      "Video Error",
+                      "Unable to load video. Please check your internet connection and try again.",
+                      [{ text: "OK" }],
+                    );
+                  }}
+                  webViewStyle={{ opacity: isLoading ? 0 : 1 }}
+                  initialPlayerParams={{
+                    controls: true,
+                    modestbranding: true,
+                    rel: false,
+                  }}
+                />
+
+                {isLoading && (
+                  <View className="absolute inset-0 items-center justify-center bg-black">
+                    <ActivityIndicator
+                      size="large"
+                      color={colors.text.primary}
+                    />
+                    <Text className="mt-3 text-sm text-neutral-400">
+                      Loading video...
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Custom Video Controls */}
+              <View className="px-6 pb-24 bg-black">
+                {/* Progress Bar */}
+                <View className="mb-4">
+                  <Slider
+                    style={{ width: "100%", height: 40 }}
+                    minimumValue={0}
+                    maximumValue={videoDuration}
+                    value={videoPosition}
+                    onSlidingComplete={seekToPosition}
+                    minimumTrackTintColor={colors.accent.primary}
+                    maximumTrackTintColor={colors.background.elevated}
+                    thumbTintColor={colors.accent.primary}
+                  />
+
+                  {/* Time Labels */}
+                  <View className="flex-row justify-between">
+                    <Text className="text-sm text-neutral-400">
+                      {formatTime(videoPosition)}
+                    </Text>
+                    <Text className="text-sm text-neutral-400">
+                      {videoDuration > 0 ? formatTime(videoDuration) : "--:--"}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Repeat button intentionally hidden. Keep repeat logic wired for future use. */}
+                {/*
+                <View className="mb-4 flex-row items-center justify-center">
+                  <Pressable
+                    onPress={toggleRepeat}
+                    className="flex-row items-center gap-2 px-4 py-2 rounded-full bg-neutral-800"
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      isRepeatEnabled ? "Repeat enabled" : "Repeat disabled"
+                    }
+                  >
+                    <Ionicons
+                      name="repeat"
+                      size={20}
+                      color={
+                        isRepeatEnabled
+                          ? colors.accent.primary
+                          : colors.text.primary
+                      }
+                    />
+                    <Text
+                      className="text-sm font-medium"
+                      style={{
+                        color: isRepeatEnabled
+                          ? colors.accent.primary
+                          : colors.text.primary,
+                      }}
+                    >
+                      Repeat
+                    </Text>
+                  </Pressable>
+                </View>
+                */}
+
+                {/* Play as Audio Button */}
+                <Pressable
+                  onPress={switchToAudio}
+                  disabled={audioLoading}
+                  className="flex-row items-center justify-center rounded-2xl px-6 py-4 active:opacity-80"
+                  style={{
+                    backgroundColor: colors.accent.primary,
+                    ...shadows.accent,
+                  }}
+                  accessibilityLabel="Switch to audio mode"
+                  accessibilityRole="button"
+                >
+                  {audioLoading ? (
+                    <>
+                      <ActivityIndicator
+                        size="small"
+                        color={colors.text.primary}
+                      />
+                      <Text
+                        className="ml-3 text-base font-bold"
+                        style={{ color: colors.text.primary }}
+                      >
+                        Loading Audio...
+                      </Text>
+                    </>
+                  ) : (
+                    <>
+                      <Ionicons
+                        name="musical-notes"
+                        size={24}
+                        color={colors.text.primary}
+                      />
+                      <Text
+                        className="ml-3 text-base font-bold"
+                        style={{ color: colors.text.primary }}
+                      >
+                        Play as Audio Only
+                      </Text>
+                    </>
+                  )}
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </View>
+      </SafeAreaView>
+    </>
+  );
+}

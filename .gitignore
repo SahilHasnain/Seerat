@@ -1,0 +1,60 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+node_modules/
+apps/mobile/node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+play-store-key.json
+encode-secrets.sh
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env*.local
+.env*
+!.env.example
+
+# typescript
+*.tsbuildinfo
+
+# workspace installs should be locked at the repo root
+apps/mobile/package-lock.json
+
+app-example
+
+# generated native folders
+/ios
+/android
+
+temp-audio
+training-data/naat
+training-data/explanation
+ref/secret.md
+inspiration/
+play-store-key.json
+sentry.properties
+secrets/

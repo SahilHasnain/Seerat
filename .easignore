@@ -1,0 +1,16 @@
+# Exclude other apps entirely
+apps/web/
+
+# Exclude packages not used by mobile
+packages/*/node_modules/
+
+# Root level exclusions
+node_modules/
+scripts/
+*.md
+.git/
+.vscode/
+.idea/
+temp-audio
+training-data/
+docker

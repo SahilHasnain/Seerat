@@ -1,0 +1,298 @@
+# Implementation Plan
+
+- [ ] 1. Set up theme configuration and base styles
+  - Configure Tailwind CSS theme in globals.css using @theme directive with color palette (neutral-900, neutral-800, neutral-700, etc.), spacing scale (4px base), typography scale, shadows, and border radius values
+  - Add base body styles with dark background (neutral-900) and white text
+  - Implement custom scrollbar styling with dark theme colors
+  - Add CSS animations for pulse effect (skeleton loaders) and transitions
+  - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
+
+- [x] 2. Create enhanced NaatCard component
+  - [x] 2.1 Build NaatCard component structure with TypeScript interface
+    - Create NaatCardProps interface with naat object and onPlay callback
+    - Set up component with rounded-2xl container, bg-neutral-800, shadow-lg
+    - Implement 16:9 aspect ratio thumbnail container with object-cover
+    - _Requirements: 2.1, 2.4_
+
+  - [x] 2.2 Add thumbnail overlays and badges
+    - Implement duration badge in bottom-right corner with bg-black/80, white text, rounded-lg, px-3 py-1.5
+    - Add centered play icon overlay (56x56px) with bg-black/30, rounded-full
+    - Ensure overlays are positioned absolutely within thumbnail container
+    - _Requirements: 2.2, 2.3_
+
+  - [x] 2.3 Implement metadata display section
+    - Add content section with p-4 padding
+    - Display title with text-base, font-bold, text-white, line-clamp-2
+    - Show channel name with 👤 icon, text-sm, font-semibold, text-neutral-300
+    - Add upload date with 📅 icon and view count with 👁️ icon, both text-xs, text-neutral-400
+    - _Requirements: 2.5_
+
+  - [x] 2.4 Add hover states and image loading
+    - Implement simple hover effect with opacity-90 transition (150ms)
+    - Add skeleton loader component for thumbnail loading state
+    - Create fallback UI with 🎵 icon and "No Thumbnail" text for image errors
+    - Use Next.js Image component with lazy loading and error handling
+    - _Requirements: 2.6, 2.7, 2.8_
+
+- [x] 3. Build responsive grid layout system
+  - [x] 3.1 Create NaatGrid component with responsive breakpoints
+    - Set up grid container with grid-cols-1 sm:grid-cols-2 lg:grid-cols-3
+    - Apply gap-6 spacing between cards
+    - Add responsive padding: px-4 (mobile), px-6 (tablet), px-8 (desktop)
+    - Implement smooth transitions (200ms ease-out) for layout changes
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
+
+  - [x] 3.2 Implement infinite scroll functionality
+    - Set up Intersection Observer to detect when user scrolls within 500px of bottom
+    - Create loadMore function to fetch next batch of 20 naats
+    - Add loading spinner at bottom during fetch
+    - Handle hasMore state to prevent unnecessary API calls
+    - _Requirements: 10.2_
+
+- [x] 4. Implement audio player context and state management
+  - [x] 4.1 Create AudioPlayerContext with state and actions
+    - Define AudioPlayerState interface (currentAudio, isPlaying, position, duration, volume, isLoading)
+    - Define AudioPlayerActions interface (loadAndPlay, togglePlayPause, seek, setVolume, stop)
+    - Implement context provider with useState and useRef for audio element
+    - Create custom useAudioPlayer hook for consuming context
+    - _Requirements: 4.1_
+
+  - [x] 4.2 Implement audio playback logic
+    - Create HTML5 Audio element with event listeners (onPlay, onPause, onTimeUpdate, onEnded, onError)
+    - Implement loadAndPlay function to load audio URL and start playback
+    - Add togglePlayPause function to control playback state
+    - Implement seek function to change playback position
+    - Add setVolume function with range 0-1
+    - Handle audio errors with try-catch and user feedback
+    - _Requirements: 4.1, 4.6_
+
+- [x] 5. Build MiniPlayer component
+  - [x] 5.1 Create MiniPlayer UI structure
+    - Set up fixed bottom container with h-72px, bg-neutral-800, border-t border-neutral-700, z-50
+    - Add progress bar at top edge (2px height, bg-neutral-700 track, bg-accent-primary fill)
+    - Create flex row layout with thumbnail (56x56px, rounded-lg), text content, and controls
+    - Display title (text-sm, font-semibold, text-white, line-clamp-1) and channel (text-xs, text-neutral-400)
+    - Add play/pause button (w-10 h-10, rounded-full, bg-neutral-700) and close button
+    - _Requirements: 4.2, 4.3_
+
+  - [x] 5.2 Add MiniPlayer animations and interactions
+    - Implement slide-up animation when audio loads (spring animation, 300ms)
+    - Add click handler to expand to full player modal
+    - Implement play/pause toggle on button click
+    - Add close button handler to stop playback and hide player
+    - Update progress bar in real-time using position/duration ratio
+    - _Requirements: 4.2, 4.6_
+
+- [x] 6. Build FullPlayerModal component
+  - [x] 6.1 Create modal overlay and container
+    - Set up fixed inset-0 overlay with bg-black/90, z-50
+    - Create centered container with max-w-480px, bg-neutral-800, rounded-2xl, p-8
+    - Add fade in/out animation (200ms) on open/close
+    - Implement click outside to close functionality
+    - _Requirements: 4.4_
+
+  - [x] 6.2 Build player controls and UI
+    - Display large thumbnail (320x320px, rounded-xl, shadow-lg)
+    - Show title (text-2xl, font-bold, text-white, text-center) and channel (text-lg, text-neutral-300)
+    - Create custom styled progress slider with draggable functionality
+    - Add time display showing current position / total duration (text-sm, text-neutral-400)
+    - Implement control buttons: previous, play/pause, next (48x48px each)
+    - Add volume slider with mute toggle
+    - Place close button in top-right corner
+    - _Requirements: 4.4_
+
+  - [x] 6.3 Add keyboard controls and accessibility
+    - Implement keyboard shortcuts: Space (play/pause), Arrow keys (seek ±10s), Esc (close)
+    - Add ARIA labels for all controls
+    - Implement focus trap within modal
+    - Add screen reader announcements for playback state changes
+    - _Requirements: 4.7, 9.1, 9.4_
+
+- [ ] 7. Create search and filter components
+  - [ ] 7.1 Build SearchBar component
+    - Create container with rounded-xl, bg-neutral-800, border border-neutral-700, px-4 py-3.5
+    - Add search icon (🔍 or SVG) with text-neutral-400
+    - Implement input with bg-transparent, text-white, placeholder-neutral-500, outline-none
+    - Add clear button that appears when text is entered
+    - Implement debouncing (300ms) for search input
+    - Add focus state with ring-2 ring-primary-600
+    - _Requirements: 5.1, 5.2, 10.4_
+  - [ ] 7.2 Build ChannelFilterBar component
+    - Create horizontal scroll container with flex gap-2, px-4 py-3, bg-neutral-800, border-b border-neutral-700
+    - Implement filter chips with px-4 py-2, rounded-full, text-sm, font-medium
+    - Style active chip with bg-primary-600, text-white
+    - Style inactive chips with bg-neutral-700, text-neutral-300, hover:bg-neutral-600
+    - Add "All Channels" option to clear filter
+    - Implement horizontal scroll with hidden scrollbar
+    - _Requirements: 5.3, 5.4_
+  - [ ] 7.3 Build SortFilterBar component
+    - Create flex container with gap-2, px-4 py-3, bg-neutral-800
+    - Implement sort buttons with px-4 py-2, rounded-lg, text-sm, font-medium
+    - Style active button with bg-neutral-700, text-white
+    - Style inactive buttons with text-neutral-400, hover:text-white, hover:bg-neutral-700
+    - Add options: "For You", "Latest", "Most Viewed", "Oldest"
+    - Implement click handlers to update sort state
+    - _Requirements: 5.5, 5.6_
+
+- [ ] 8. Enhance navigation component
+  - [ ] 8.1 Build desktop navigation
+    - Create nav container with bg-neutral-800, border-b border-neutral-700, h-16
+    - Add logo with text-xl, font-bold, text-white
+    - Implement inline navigation links with text-neutral-300, hover:text-white, px-3 py-2, rounded-lg, hover:bg-neutral-700
+    - Style active link with text-white, bg-neutral-700
+    - Add search icon and other utility buttons on right side
+    - _Requirements: 6.1, 6.2, 6.4, 6.5_
+  - [ ] 8.2 Build mobile navigation
+    - Add hamburger menu icon for viewports <1024px
+    - Create slide-in drawer from left with full-height overlay
+    - Implement drawer with bg-neutral-800, vertical link layout
+    - Add close button in drawer header
+    - Implement smooth slide animation (300ms)
+    - _Requirements: 6.3_
+  - [ ] 8.3 Add keyboard navigation support
+    - Ensure all navigation links are keyboard accessible with Tab key
+    - Add visible focus indicators (2px solid outline, 2px offset)
+    - Implement Enter key to activate links
+    - Add skip to main content link for screen readers
+    - _Requirements: 6.6, 9.2_
+
+- [ ] 9. Create loading states and skeleton loaders
+  - [ ] 9.1 Build SkeletonLoader component
+    - Create container matching NaatCard dimensions with rounded-2xl, bg-neutral-800
+    - Add thumbnail skeleton with aspect-video, bg-neutral-700, rounded-t-2xl
+    - Create content section with p-4 and multiple line skeletons (bg-neutral-700, rounded, h-4)
+    - Implement pulse animation using CSS keyframes (2s duration, infinite)
+    - _Requirements: 7.1, 7.2_
+  - [ ] 9.2 Integrate skeleton loaders into grid
+    - Display appropriate number of skeletons based on viewport (4 mobile, 6 tablet, 8 desktop)
+    - Show skeletons while initial data is loading
+    - Implement fade-out animation (200ms) when content loads
+    - Add fade-in animation (300ms) for actual content
+    - _Requirements: 7.3, 7.4_
+
+- [ ] 10. Create empty state components
+  - [ ] 10.1 Build EmptyState component
+    - Create container with flex flex-col, items-center, justify-center, py-20, px-4
+    - Add icon prop with text-7xl, mb-4 (emoji or SVG)
+    - Display message with text-lg, text-neutral-400, text-center, leading-relaxed, max-w-sm
+    - Add optional action button with mt-6, px-6 py-3, bg-primary-600, text-white, rounded-xl, hover:bg-primary-700
+    - _Requirements: 8.4, 8.5_
+  - [ ] 10.2 Create empty state variants
+    - No content variant: 🎵 icon with "No naats available yet. Check back soon!"
+    - No search results variant: 🔍 icon with "No naats found matching your search."
+    - Network error variant: ⚠️ icon with error message and "Retry" button
+    - _Requirements: 8.1, 8.2, 8.3, 5.8_
+
+- [ ] 11. Implement BackToTopButton component
+  - Create fixed bottom-right button with w-12 h-12, rounded-full, bg-neutral-700, shadow-lg, z-40
+  - Add ↑ arrow icon with text-white, text-xl
+  - Implement hover effect with bg-neutral-600
+  - Show button when scrolled >500px from top with fade in/out animation (200ms)
+  - Add smooth scroll to top on click (800ms duration)
+  - _Requirements: 10.2_
+
+- [ ] 12. Implement performance optimizations
+  - [ ] 12.1 Add image lazy loading and optimization
+    - Configure Next.js Image component with lazy loading
+    - Set up image domains in next.config.js for Appwrite CDN
+    - Implement blur placeholder for images
+    - Add intersection observer for manual lazy loading if needed
+    - _Requirements: 10.1_
+  - [ ] 12.2 Implement caching and debouncing
+    - Create API response cache with Map and 5-minute TTL
+    - Implement getCachedData and setCachedData utility functions
+    - Add debouncing (300ms) to search input using useMemo and debounce utility
+    - Implement throttling (100ms) for scroll events
+    - _Requirements: 10.3, 10.4_
+  - [ ] 12.3 Optimize bundle size and code splitting
+    - Implement dynamic imports for FullPlayerModal component
+    - Configure Next.js to remove console logs in production
+    - Set up image optimization with AVIF and WebP formats
+    - Verify route-based code splitting is working
+    - _Requirements: 10.5, 10.6_
+
+- [ ] 13. Implement accessibility features
+  - [ ] 13.1 Add ARIA labels and roles
+    - Add aria-label to all buttons describing their action
+    - Implement aria-pressed for play/pause buttons
+    - Add role="region" with aria-label for audio player
+    - Include aria-live regions for dynamic content updates
+    - _Requirements: 9.1, 9.4_
+  - [ ] 13.2 Ensure keyboard navigation
+    - Verify tab order follows visual flow
+    - Add visible focus indicators (2px solid outline, 2px offset) to all interactive elements
+    - Implement keyboard shortcuts for audio player (Space, Arrow keys, Esc)
+    - Add "?" key to show keyboard shortcuts documentation
+    - _Requirements: 9.2, 9.5_
+  - [ ] 13.3 Verify color contrast and touch targets
+    - Test all text color combinations meet WCAG AA standards (4.5:1 for normal, 3:1 for large)
+    - Ensure all interactive elements have minimum 44x44px touch target size
+    - Add focus management for modals (focus trap, return focus on close)
+    - _Requirements: 9.3, 9.6_
+
+- [ ] 14. Update page layouts and integrate components
+  - [ ] 14.1 Update root layout
+    - Wrap app with AudioPlayerContext provider
+    - Add Navigation component to layout
+    - Include MiniPlayer component at bottom
+    - Set up proper z-index stacking for overlays
+    - _Requirements: 4.5_
+  - [ ] 14.2 Update home page
+    - Remove Hero component
+    - Add SearchBar at top of page
+    - Include ChannelFilterBar and SortFilterBar
+    - Integrate NaatGrid with infinite scroll
+    - Add BackToTopButton
+    - Handle loading states with skeleton loaders
+    - Display empty states when appropriate
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 5.1, 5.3, 5.5, 7.1, 7.4, 8.1, 8.2, 8.3_
+  - [ ] 14.3 Connect audio player to NaatCard
+    - Pass onPlay handler from AudioPlayerContext to NaatCard
+    - Implement click handler to load and play audio
+    - Handle audio loading errors with user feedback
+    - Track playback in watch history
+    - _Requirements: 4.1, 4.6_
+
+- [ ] 15. Testing and quality assurance
+  - [ ]\* 15.1 Write unit tests for components
+    - Test NaatCard rendering, click handlers, and image error handling
+    - Test SearchBar debouncing and clear functionality
+    - Test FilterBars selection state and click handlers
+    - Test EmptyState variants and action buttons
+    - Test SkeletonLoader animation and dimensions
+    - _Requirements: All_
+  - [ ]\* 15.2 Perform accessibility audit
+    - Run axe-core automated accessibility tests
+    - Test keyboard navigation through all interactive elements
+    - Verify screen reader compatibility with NVDA/JAWS
+    - Check color contrast ratios with WAVE tool
+    - Test focus management in modals
+    - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6_
+  - [ ]\* 15.3 Run performance tests
+    - Run Lighthouse audit and achieve 90+ score on desktop, 80+ on mobile
+    - Verify FCP < 1.5s, LCP < 2.5s, CLS < 0.1
+    - Test infinite scroll performance with large datasets
+    - Check image loading performance and lazy loading
+    - Profile audio player memory usage
+    - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5, 10.6_
+  - [ ]\* 15.4 Cross-browser testing
+    - Test on Chrome/Edge 90+, Firefox 88+, Safari 14+
+    - Verify mobile Safari 14+ and Chrome Android 90+ compatibility
+    - Check responsive behavior on various screen sizes
+    - Test audio playback across browsers
+    - Verify CSS Grid and Flexbox fallbacks
+    - _Requirements: All_
+
+- [ ] 16. Documentation and deployment preparation
+  - [ ]\* 16.1 Update documentation
+    - Document component APIs and props interfaces
+    - Add usage examples for key components
+    - Document keyboard shortcuts and accessibility features
+    - Create deployment guide with environment variables
+    - _Requirements: All_
+  - [ ]\* 16.2 Configure build and deployment
+    - Set up environment variables for Appwrite
+    - Configure next.config.js for image optimization and CDN
+    - Set up production build with console log removal
+    - Verify all assets are properly optimized
+    - _Requirements: 10.5, 10.6_

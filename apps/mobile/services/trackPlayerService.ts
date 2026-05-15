@@ -1,0 +1,128 @@
+/**
+ * Track Player Service
+ * Handles playback events for react-native-track-player
+ */
+
+import TrackPlayer, {
+  AppKilledPlaybackBehavior,
+  Capability,
+  Event,
+} from "@weights-ai/react-native-track-player";
+
+const SEEK_INTERVAL = 10; // seconds
+
+export async function PlaybackService() {
+  // Simple, synchronous event handlers
+  TrackPlayer.addEventListener(Event.RemotePlay, () => {
+    TrackPlayer.play();
+  });
+
+  TrackPlayer.addEventListener(Event.RemotePause, async () => {
+    const currentTrack = await TrackPlayer.getActiveTrack();
+
+    // Live radio pause should behave as stop, so replay reconnects to stream server.
+    if (currentTrack?.id === "live-radio-icecast") {
+      await TrackPlayer.stop();
+      return;
+    }
+
+    await TrackPlayer.pause();
+  });
+
+  TrackPlayer.addEventListener(Event.RemoteStop, () => {
+    TrackPlayer.reset();
+  });
+
+  TrackPlayer.addEventListener(Event.RemoteNext, () => {
+    // Handle next track if needed
+  });
+
+  TrackPlayer.addEventListener(Event.RemotePrevious, () => {
+    // Handle previous track if needed
+  });
+
+  // Jump forward handler
+  TrackPlayer.addEventListener(Event.RemoteJumpForward, async (event) => {
+    await TrackPlayer.seekBy(event.interval || SEEK_INTERVAL);
+  });
+
+  // Jump backward handler
+  TrackPlayer.addEventListener(Event.RemoteJumpBackward, async (event) => {
+    await TrackPlayer.seekBy(-(event.interval || SEEK_INTERVAL));
+  });
+}
+
+/**
+ * Setup Track Player with default configuration
+ */
+export async function setupPlayer() {
+  try {
+    await TrackPlayer.setupPlayer({
+      waitForBuffer: true,
+      autoUpdateMetadata: true,
+      autoHandleInterruptions: true,
+      // Buffer configuration for smoother seeking in both directions
+      minBuffer: 30, // Minimum 30 seconds buffer ahead
+      maxBuffer: 60, // Maximum 60 seconds buffer ahead
+      playBuffer: 2.5, // Only 2.5 seconds needed to resume after seek
+      backBuffer: 60, // Keep 60 seconds behind for instant backward seeking (Android only)
+    });
+
+    await TrackPlayer.updateOptions({
+      // Only include capabilities you actually want
+      capabilities: [Capability.Play, Capability.Pause],
+      notificationCapabilities: [Capability.Play, Capability.Pause],
+      compactCapabilities: [Capability.Play, Capability.Pause],
+      android: {
+        appKilledPlaybackBehavior: AppKilledPlaybackBehavior.PausePlayback,
+      },
+    });
+
+    console.log("[TrackPlayer] Setup complete");
+  } catch (error) {
+    console.error("[TrackPlayer] Setup error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Update notification capabilities based on playback mode
+ * @param isLiveMode - Whether live radio mode is active
+ */
+export async function updateNotificationCapabilities(isLiveMode: boolean) {
+  try {
+    if (isLiveMode) {
+      // Live mode: play/pause (pause is intercepted and treated as stop in LiveRadioContext)
+      await TrackPlayer.updateOptions({
+        capabilities: [Capability.Play, Capability.Pause],
+        notificationCapabilities: [Capability.Play, Capability.Pause],
+        compactCapabilities: [Capability.Play, Capability.Pause],
+      });
+      console.log("[TrackPlayer] Updated to live mode capabilities");
+    } else {
+      // Normal mode: play/pause + jump forward/backward
+      await TrackPlayer.updateOptions({
+        capabilities: [
+          Capability.Play,
+          Capability.Pause,
+          Capability.JumpForward,
+          Capability.JumpBackward,
+        ],
+        notificationCapabilities: [
+          Capability.Play,
+          Capability.Pause,
+          Capability.JumpForward,
+          Capability.JumpBackward,
+        ],
+        compactCapabilities: [Capability.Play, Capability.Pause],
+        forwardJumpInterval: SEEK_INTERVAL,
+        backwardJumpInterval: SEEK_INTERVAL,
+      });
+      console.log(
+        "[TrackPlayer] Updated to normal mode capabilities with seek",
+      );
+    }
+  } catch (error) {
+    console.error("[TrackPlayer] Error updating capabilities:", error);
+  }
+}

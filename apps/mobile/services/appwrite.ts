@@ -1,0 +1,305 @@
+/**
+ * Appwrite Service for React Native
+ *
+ * This service wraps the shared AppwriteService with Sentry error tracking
+ * and platform-specific error handling.
+ */
+
+import { AppwriteService as BaseAppwriteService } from "@naat-collection/api-client";
+import type {
+    AudioUrlResponse,
+    Channel,
+    IAppwriteService,
+    Naat,
+} from "@naat-collection/shared";
+import { AppError, ErrorCode } from "@naat-collection/shared";
+import * as Sentry from "@sentry/react-native";
+import { appwriteConfig, validateAppwriteConfig } from "../config/appwrite";
+import {
+    DEFAULT_TIMEOUT,
+    logError,
+    withCacheFallback,
+    wrapError,
+} from "../utils/errorHandling";
+
+/**
+ * AppwriteService class with Sentry integration
+ */
+export class AppwriteService implements IAppwriteService {
+  private baseService: BaseAppwriteService;
+
+  constructor() {
+    // Validate config on initialization
+    validateAppwriteConfig();
+
+    // Create base service with error callback
+    this.baseService = new BaseAppwriteService({
+      config: appwriteConfig,
+      onError: (error, context) => {
+        // Send errors to Sentry
+        Sentry.captureException(error, {
+          tags: {
+            component: "appwrite",
+            action: context?.context || "unknown",
+          },
+          contexts: {
+            request: context,
+          },
+        });
+      },
+    });
+
+    // Log successful initialization to Sentry
+    Sentry.addBreadcrumb({
+      category: "appwrite",
+      message: "Appwrite client initialized",
+      level: "info",
+    });
+  }
+
+  /**
+   * Fetches a paginated list of naats from the database
+   */
+  async getNaats(
+    limit: number = 20,
+    offset: number = 0,
+    sortBy: "latest" | "popular" | "oldest" = "latest",
+    channelId?: string | null,
+    pureOnly?: boolean,
+  ): Promise<Naat[]> {
+    const channelKey = channelId || "all";
+    const pureKey = pureOnly ? "_pure" : "";
+    const cacheKey = `naats_${channelKey}_${limit}_${offset}_${sortBy}${pureKey}`;
+
+    try {
+      return await withCacheFallback(
+        () => this.baseService.getNaats(limit, offset, sortBy, channelId, pureOnly),
+        cacheKey,
+        {
+          timeoutMs: DEFAULT_TIMEOUT,
+          maxAttempts: 3,
+        },
+      );
+    } catch (error) {
+      const wrappedError = wrapError(error, ErrorCode.NETWORK_ERROR);
+      logError(wrappedError, {
+        context: "getNaats",
+        limit,
+        offset,
+        sortBy,
+        channelId,
+      });
+
+      if (error instanceof AppError) {
+        throw error;
+      }
+
+      throw new AppError(
+        "Unable to load naats. Please check your internet connection.",
+        ErrorCode.NETWORK_ERROR,
+        true,
+      );
+    }
+  }
+
+  /**
+   * Fetches a single naat by its ID
+   */
+  async getNaatById(id: string): Promise<Naat> {
+    if (!id || id.trim() === "") {
+      throw new AppError(
+        "Invalid naat ID provided.",
+        ErrorCode.API_ERROR,
+        false,
+      );
+    }
+
+    const cacheKey = `naat_${id}`;
+
+    try {
+      return await withCacheFallback(
+        () => this.baseService.getNaatById(id),
+        cacheKey,
+        {
+          timeoutMs: DEFAULT_TIMEOUT,
+          maxAttempts: 3,
+        },
+      );
+    } catch (error) {
+      logError(wrapError(error, ErrorCode.API_ERROR), {
+        context: "getNaatById",
+        id,
+      });
+
+      if (error instanceof AppError) {
+        throw error;
+      }
+
+      throw new AppError(
+        "Unable to load naat details. Please try again.",
+        ErrorCode.API_ERROR,
+        true,
+      );
+    }
+  }
+
+  /**
+   * Searches for naats matching the provided query string
+   */
+  async searchNaats(query: string, channelId?: string | null, pureOnly?: boolean): Promise<Naat[]> {
+    if (!query || query.trim() === "") {
+      return [];
+    }
+
+    const channelKey = channelId || "all";
+    const pureKey = pureOnly ? "_pure" : "";
+    const cacheKey = `search_${channelKey}_${query}${pureKey}`;
+
+    try {
+      return await withCacheFallback(
+        () => this.baseService.searchNaats(query, channelId, pureOnly),
+        cacheKey,
+        {
+          timeoutMs: DEFAULT_TIMEOUT,
+          maxAttempts: 3,
+        },
+      );
+    } catch (error) {
+      logError(wrapError(error, ErrorCode.NETWORK_ERROR), {
+        context: "searchNaats",
+        query,
+        channelId,
+      });
+
+      if (error instanceof AppError) {
+        throw error;
+      }
+
+      throw new AppError(
+        "Search failed. Please check your connection and try again.",
+        ErrorCode.NETWORK_ERROR,
+        true,
+      );
+    }
+  }
+
+  /**
+   * Fetches distinct channels from the database
+   */
+  async getChannels(): Promise<Channel[]> {
+    const cacheKey = "channels_list";
+
+    try {
+      return await withCacheFallback(
+        () => this.baseService.getChannels(),
+        cacheKey,
+        {
+          timeoutMs: DEFAULT_TIMEOUT,
+          maxAttempts: 3,
+        },
+      );
+    } catch (error) {
+      logError(wrapError(error, ErrorCode.NETWORK_ERROR), {
+        context: "getChannels",
+      });
+
+      if (error instanceof AppError) {
+        throw error;
+      }
+
+      throw new AppError(
+        "Unable to load channels. Please check your internet connection.",
+        ErrorCode.NETWORK_ERROR,
+        true,
+      );
+    }
+  }
+
+  /**
+   * Get audio URL from Appwrite Storage
+   */
+  async getAudioUrl(audioId?: string | null): Promise<AudioUrlResponse> {
+    return this.baseService.getAudioUrl(audioId);
+  }
+
+  /**
+   * Performs semantic search using AI-powered function
+   */
+  async semanticSearch(query: string): Promise<Naat[]> {
+    if (!query || query.trim() === "") {
+      return [];
+    }
+
+    const functionUrl = appwriteConfig.semanticSearchFunctionUrl;
+
+    console.log("[DEBUG] Semantic Search Config:", {
+      functionUrl,
+      hasConfig: !!functionUrl,
+      configKeys: Object.keys(appwriteConfig),
+    });
+
+    if (!functionUrl) {
+      console.warn("Semantic search function URL not configured, falling back to regular search");
+      return this.searchNaats(query);
+    }
+
+    console.log(`[DEBUG] Calling semantic search: ${functionUrl}`);
+
+    try {
+      const response = await fetch(functionUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query }),
+      });
+
+      console.log(`[DEBUG] Semantic search response status: ${response.status}`);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[DEBUG] Semantic search error response:`, errorText);
+        throw new Error(`Semantic search failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log(`[DEBUG] Semantic search results:`, data);
+
+      if (!data.success || !data.results) {
+        throw new Error("Invalid response from semantic search");
+      }
+
+      // Map results back to Naat objects
+      // The function returns partial naat data, we need to fetch full details
+      const naatIds = data.results.map((r: any) => r.naatId);
+      
+      console.log(`[DEBUG] Fetching ${naatIds.length} naat details`);
+
+      // Fetch full naat details for each result
+      const naats = await Promise.all(
+        naatIds.map((id: string) => this.getNaatById(id).catch(() => null))
+      );
+
+      // Filter out any failed fetches and return
+      const validNaats = naats.filter((naat): naat is Naat => naat !== null);
+      console.log(`[DEBUG] Returning ${validNaats.length} valid naats`);
+      
+      return validNaats;
+    } catch (error) {
+      console.error("[DEBUG] Semantic search error:", error);
+      logError(wrapError(error, ErrorCode.NETWORK_ERROR), {
+        context: "semanticSearch",
+        query,
+      });
+
+      // Fallback to regular search on error
+      console.warn("Semantic search failed, falling back to regular search");
+      return this.searchNaats(query);
+    }
+  }
+}
+
+/**
+ * Singleton instance of AppwriteService
+ */
+export const appwriteService = new AppwriteService();
