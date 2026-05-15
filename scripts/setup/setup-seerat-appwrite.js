@@ -250,6 +250,50 @@ async function ensureSeeratSchema(databases) {
       false
     )
   );
+  await ensureAttribute(databases, SEERAT_COLLECTION_ID, "cutAudio", () =>
+    databases.createStringAttribute(
+      DATABASE_ID,
+      SEERAT_COLLECTION_ID,
+      "cutAudio",
+      255,
+      false
+    )
+  );
+  await ensureAttribute(databases, SEERAT_COLLECTION_ID, "cutDuration", () =>
+    databases.createIntegerAttribute(
+      DATABASE_ID,
+      SEERAT_COLLECTION_ID,
+      "cutDuration",
+      false,
+      0
+    )
+  );
+  await ensureAttribute(databases, SEERAT_COLLECTION_ID, "cutSegments", () =>
+    databases.createStringAttribute(
+      DATABASE_ID,
+      SEERAT_COLLECTION_ID,
+      "cutSegments",
+      50000,
+      false
+    )
+  );
+  await ensureAttribute(databases, SEERAT_COLLECTION_ID, "cutStatus", () =>
+    databases.createStringAttribute(
+      DATABASE_ID,
+      SEERAT_COLLECTION_ID,
+      "cutStatus",
+      32,
+      false
+    )
+  );
+  await ensureAttribute(databases, SEERAT_COLLECTION_ID, "exclude", () =>
+    databases.createBooleanAttribute(
+      DATABASE_ID,
+      SEERAT_COLLECTION_ID,
+      "exclude",
+      false
+    )
+  );
   await ensureAttribute(databases, SEERAT_COLLECTION_ID, "views", () =>
     databases.createIntegerAttribute(
       DATABASE_ID,
@@ -434,8 +478,31 @@ async function deleteBucketIfExists(storage, bucketId) {
 
 async function ensureAudioBucket(storage) {
   try {
-    await storage.getBucket(AUDIO_BUCKET_ID);
+    const bucket = await storage.getBucket(AUDIO_BUCKET_ID);
     console.log(`Bucket '${AUDIO_BUCKET_ID}' already exists`);
+
+    const desiredExtensions = ["m4a", "mp4", "mpeg", "mp3", "aac"];
+    const currentExtensions = bucket.allowedFileExtensions || [];
+    const needsUpdate =
+      desiredExtensions.length !== currentExtensions.length ||
+      desiredExtensions.some((ext) => !currentExtensions.includes(ext));
+
+    if (needsUpdate) {
+      await storage.updateBucket(
+        AUDIO_BUCKET_ID,
+        bucket.name,
+        bucket.$permissions,
+        bucket.fileSecurity,
+        bucket.enabled,
+        bucket.maximumFileSize,
+        desiredExtensions,
+        bucket.compression,
+        bucket.encryption,
+        bucket.antivirus
+      );
+      console.log(`Updated bucket '${AUDIO_BUCKET_ID}' allowed extensions`);
+    }
+
     return;
   } catch (error) {
     if (error.code !== 404) {
@@ -455,7 +522,7 @@ async function ensureAudioBucket(storage) {
     false,
     true,
     100 * 1024 * 1024,
-    ["audio/m4a", "audio/mp4", "audio/mpeg", "audio/mp3", "audio/aac"],
+    ["m4a", "mp4", "mpeg", "mp3", "aac"],
     "none",
     false,
     true

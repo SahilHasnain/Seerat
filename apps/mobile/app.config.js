@@ -13,12 +13,12 @@ const getUniqueIdentifier = () => {
 
 const getAppName = () => {
   if (IS_DEV) {
-    return "Owais Raza Qadri (Dev)";
+    return "Seerat E Mustafa (Dev)";
   }
   if (IS_PREVIEW) {
-    return "Owais Raza Qadri (Preview)";
+    return "Seerat E Mustafa (Preview)";
   }
-  return "Owais Raza Qadri";
+  return "Seerat E Mustafa";
 };
 
 export default {

@@ -1,8 +1,8 @@
 import EmptyState from "@/components/EmptyState";
 import NaatActionSheet from "@/components/NaatActionSheet";
-import NaatCard from "@/components/NaatCard";
 import { SearchFilterBar } from "@/components/SearchFilterBar";
 import { SearchSuggestions } from "@/components/SearchSuggestions";
+import SeeratNaatCard from "@/components/SeeratNaatCard";
 import UnifiedFilterBar from "@/components/UnifiedFilterBar";
 import { colors } from "@/constants/theme";
 import { useHeaderVisibility } from "@/contexts/HeaderVisibilityContext.animated";
@@ -36,7 +36,6 @@ import {
 
 export default function HomeScreen() {
   const flatListRef = useRef<FlatList>(null);
-  const NUM_COLUMNS = 2;
   const router = useRouter();
   const params = useLocalSearchParams<{
     autoPlayNaatId?: string;
@@ -279,34 +278,19 @@ export default function HomeScreen() {
 
   // --- Render helpers ---
 
-  const renderNaatCard = React.useCallback<ListRenderItem<Naat>>(
-    ({ item, index }) => {
-      const ds = downloadStates[item.$id];
-      const isLeftColumn = index % NUM_COLUMNS === 0;
-
+  const renderNaatListItem = React.useCallback<ListRenderItem<Naat>>(
+    ({ item }) => {
       return (
-        <View
-          style={{
-            flex: 1,
-            marginLeft: isLeftColumn ? 16 : 6,
-            marginRight: isLeftColumn ? 6 : 16,
-          }}
-        >
-          <NaatCard
-            id={item.$id}
+        <View className="px-4">
+          <SeeratNaatCard
             title={item.title}
             thumbnail={item.thumbnailUrl}
             duration={getPreferredDuration(item)}
-            uploadDate={item.uploadDate}
             channelName={item.channelName}
             views={item.views}
+            uploadDate={item.uploadDate}
             onPress={() => handleNaatPress(item.$id)}
             onLongPress={() => handleCardLongPress(item)}
-            onDownload={() => handleDownload(item)}
-            isDownloaded={ds?.isDownloaded}
-            isDownloading={ds?.isDownloading}
-            downloadProgress={ds?.progress}
-            isCut={!!item.cutAudio}
           />
         </View>
       );
@@ -314,9 +298,6 @@ export default function HomeScreen() {
     [
       handleNaatPress,
       handleCardLongPress,
-      handleDownload,
-      downloadStates,
-      NUM_COLUMNS,
     ],
   );
 
@@ -400,12 +381,10 @@ export default function HomeScreen() {
 
       <View className="flex-1">
         <FlatList
-          key={`naat-grid-${NUM_COLUMNS}`}
           ref={flatListRef}
           data={filters.displayData}
-          renderItem={renderNaatCard}
+          renderItem={renderNaatListItem}
           keyExtractor={(item) => item.$id}
-          numColumns={NUM_COLUMNS}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{
             flexGrow: 1,
@@ -500,11 +479,10 @@ export default function HomeScreen() {
               tintColor={colors.accent.secondary}
             />
           }
-          removeClippedSubviews={false}
-          maxToRenderPerBatch={10}
-          windowSize={10}
-          initialNumToRender={10}
-          columnWrapperStyle={{ alignItems: "flex-start" }}
+          removeClippedSubviews
+          maxToRenderPerBatch={8}
+          windowSize={8}
+          initialNumToRender={8}
         />
       </View>
 
