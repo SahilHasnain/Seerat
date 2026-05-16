@@ -9,7 +9,7 @@ import React, { useCallback, useState } from "react";
 
 export function useHomeFilters() {
   // Home filters
-  const [selectedFilter, setSelectedFilter] = useState<SortOption>("forYou");
+  const [selectedFilter, setSelectedFilter] = useState<SortOption>("latest");
   const [selectedDuration, setSelectedDuration] = useState<DurationOption>("all");
   const [pureOnly, setPureOnly] = useState(false);
 
@@ -47,7 +47,7 @@ export function useHomeFilters() {
   const isLoading = isShowingSearchResults ? searchLoading : loading;
 
   const hasActiveHomeFilters =
-    selectedFilter !== "forYou" ||
+    selectedFilter !== "latest" ||
     selectedChannelId !== null ||
     selectedDuration !== "all" ||
     pureOnly;

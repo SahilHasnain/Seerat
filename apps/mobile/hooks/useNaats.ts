@@ -2,14 +2,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { appwriteService } from "../services/appwrite";
 import { getForYouFeed } from "../services/forYouAlgorithm";
 import { storageService } from "../services/storage";
-import type { Naat, UseNaatsReturn } from "../types";
+import type { Naat, SortOption, UseNaatsReturn } from "../types";
 
 /**
  * Number of naats to fetch per page
  */
 const PAGE_SIZE = 20;
-
-export type SortOption = "forYou" | "latest" | "popular" | "oldest";
 
 /**
  * Custom hook for managing naats data with pagination and caching
@@ -26,12 +24,12 @@ export type SortOption = "forYou" | "latest" | "popular" | "oldest";
  * - For "forYou" filter: Fetches ALL videos (3000+) in batches for comprehensive recommendations
  *
  * @param channelId - YouTube channel ID to filter by (null = all channels)
- * @param filter - Sort order for naats (default: "forYou")
+ * @param filter - Sort order for naats (default: "latest")
  * @returns UseNaatsReturn object with naats data and control functions
  */
 export function useNaats(
   channelId: string | null = null,
-  filter: SortOption = "forYou",
+  filter: SortOption = "latest",
   pureOnly: boolean = false,
 ): UseNaatsReturn {
   const [naats, setNaats] = useState<Naat[]>([]);
@@ -65,6 +63,7 @@ export function useNaats(
   );
 
   const cacheKey = getCacheKey(channelId, filter);
+  const effectiveFilter: SortOption = channelId ? "series" : filter;
 
   // Reset state when filter or channelId or pureOnly changes
   useEffect(() => {
@@ -119,7 +118,7 @@ export function useNaats(
     }
 
     // For "forYou" filter, use progressive loading strategy
-    if (filter === "forYou") {
+    if (effectiveFilter === "forYou") {
       // Check if we already have the full ordered list cached
       const cachedOrderedList = fullOrderedListRef.current.get(cacheKey);
 
@@ -272,7 +271,7 @@ export function useNaats(
     } else {
       // Standard fetch for other filters
       appwriteService
-        .getNaats(PAGE_SIZE, offsetRef.current, filter, channelId, pureOnly)
+        .getNaats(PAGE_SIZE, offsetRef.current, effectiveFilter, channelId, pureOnly)
         .then((newNaats) => {
           // Cache the results for this channel + filter combination
           filterCache.set(offsetRef.current, newNaats);
@@ -304,7 +303,7 @@ export function useNaats(
           isLoadingRef.current = false;
         });
     }
-  }, [hasMore, filter, channelId, cacheKey, pureOnly]);
+  }, [hasMore, filter, effectiveFilter, channelId, cacheKey, pureOnly]);
 
   /**
    * Refresh the naats list (pull-to-refresh)
@@ -321,7 +320,7 @@ export function useNaats(
     fullOrderedListRef.current.clear();
 
     // Clear For You session if using that filter
-    if (filter === "forYou") {
+    if (effectiveFilter === "forYou") {
       await storageService.clearForYouSession();
     }
 
@@ -332,7 +331,7 @@ export function useNaats(
     isLoadingRef.current = true;
 
     try {
-      if (filter === "forYou") {
+      if (effectiveFilter === "forYou") {
         // Progressive loading: Start with 1000 videos for fast refresh
         const initialBatchSize = 1000;
 
@@ -437,7 +436,7 @@ export function useNaats(
         const freshNaats = await appwriteService.getNaats(
           PAGE_SIZE,
           0,
-          filter,
+          effectiveFilter,
           channelId,
           pureOnly,
         );
@@ -464,7 +463,7 @@ export function useNaats(
       setLoading(false);
       isLoadingRef.current = false;
     }
-  }, [filter, channelId, cacheKey]);
+  }, [filter, effectiveFilter, channelId, cacheKey, pureOnly]);
 
   return {
     naats,

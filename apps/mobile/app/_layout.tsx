@@ -31,9 +31,9 @@ import {
   useTabBarVisibility,
 } from "@/contexts/TabBarVisibilityContext.animated";
 import { VideoProvider } from "@/contexts/VideoContext";
+import { useChannels } from "@/hooks/useChannels";
 import { useDeepLinking } from "@/hooks/useDeepLinking";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
-import { useChannels } from "@/hooks/useChannels";
 import { Ionicons } from "@expo/vector-icons";
 import * as Sentry from "@sentry/react-native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -46,8 +46,8 @@ import {
   SafeAreaProvider,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import WebRootLayout from "./_layout.web";
 import "../global.css";
+import WebRootLayout from "./_layout.web";
 
 // Initialize Sentry
 Sentry.init({
@@ -150,7 +150,7 @@ function RootLayoutContent() {
     <>
       {/* Animated Header - Global across all screens except video */}
       {!isOnVideoScreen && (
-          <AnimatedHeader
+        <AnimatedHeader
           translateY={headerTranslateY}
           isScrolledDown={isScrolledDownValue}
           selectedSort="forYou"
@@ -249,6 +249,12 @@ function RootLayoutContent() {
         />
         <Tabs.Screen
           name="video"
+          options={{
+            href: null,
+          }}
+        />
+        <Tabs.Screen
+          name="privacy-policy"
           options={{
             href: null,
           }}

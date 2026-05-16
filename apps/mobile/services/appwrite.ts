@@ -63,7 +63,7 @@ export class AppwriteService implements IAppwriteService {
   async getNaats(
     limit: number = 20,
     offset: number = 0,
-    sortBy: "latest" | "popular" | "oldest" = "latest",
+    sortBy: "latest" | "popular" | "oldest" | "series" = "latest",
     channelId?: string | null,
     pureOnly?: boolean,
   ): Promise<Naat[]> {

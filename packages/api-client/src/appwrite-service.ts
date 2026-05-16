@@ -58,7 +58,7 @@ export class AppwriteService implements IAppwriteService {
   async getNaats(
     limit: number = 20,
     offset: number = 0,
-    sortBy: "latest" | "popular" | "oldest" = "latest",
+    sortBy: "latest" | "popular" | "oldest" | "series" = "latest",
     channelId?: string | null,
     pureOnly?: boolean,
   ): Promise<Naat[]> {
@@ -83,6 +83,10 @@ export class AppwriteService implements IAppwriteService {
       }
 
       switch (sortBy) {
+        case "series":
+          queries.push(Query.orderAsc("sortOrder"));
+          queries.push(Query.orderAsc("uploadDate"));
+          break;
         case "popular":
           queries.push(Query.orderDesc("views"));
           break;
@@ -228,6 +232,7 @@ export class AppwriteService implements IAppwriteService {
           id: channelDoc.channelId,
           name: channelDoc.channelName,
           modeName: channelDoc.modeName,
+          modeOrder: channelDoc.modeOrder,
           isOfficial: channelDoc.isOfficial ?? true,
           isOther: channelDoc.isOther ?? false,
           type: channelDoc.type ?? "channel",

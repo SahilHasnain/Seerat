@@ -4,6 +4,7 @@ export interface Naat {
   title: string;
   videoUrl: string;
   thumbnailUrl: string;
+  sortOrder?: number; // Series order for ordered lecture/episode playback
   duration: number; // in seconds
   uploadDate: string; // ISO 8601 format
   channelName: string;
@@ -20,7 +21,7 @@ export interface Naat {
 }
 
 // Sort option type for filtering naats
-export type SortOption = "forYou" | "latest" | "popular" | "oldest";
+export type SortOption = "forYou" | "latest" | "popular" | "oldest" | "series";
 
 // Duration option type for filtering naats by duration
 export type DurationOption = "all" | "short" | "medium" | "long";
@@ -29,6 +30,7 @@ export interface Channel {
   id: string; // YouTube channel ID or generated ID for playlists
   name: string; // Channel display name
   modeName?: string; // Short name for compact mode selectors
+  modeOrder?: number; // Explicit ordering for mode-based playback and UI
   isOfficial?: boolean; // Whether channel is official (ingest all videos)
   isOther?: boolean; // Whether channel should appear in "Other" tab
   type?: "channel" | "playlist"; // Type of source
@@ -40,6 +42,7 @@ export interface ChannelDocument {
   channelId: string; // YouTube channel ID or generated ID for playlists
   channelName: string;
   modeName?: string; // Short name for compact mode selectors
+  modeOrder?: number; // Explicit ordering for mode-based playback and UI
   naatCount?: number; // Optional: number of naats from this channel
   lastUpdated?: string; // ISO 8601 format
   isOfficial?: boolean; // Whether channel is official (ingest all videos)
@@ -101,7 +104,7 @@ export interface IAppwriteService {
   getNaats(
     limit: number,
     offset: number,
-    sortBy?: "latest" | "popular" | "oldest",
+    sortBy?: "latest" | "popular" | "oldest" | "series",
     channelId?: string | null,
     pureOnly?: boolean,
   ): Promise<Naat[]>;

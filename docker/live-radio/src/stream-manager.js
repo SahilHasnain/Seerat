@@ -87,7 +87,7 @@ class StreamManager {
 
       const databases = new Databases(client);
 
-      const response = await this.fetchAllNaats(databases, Query);
+      const response = await this.fetchOrderedPlaylist(databases, Query);
       const endpoint = process.env.APPWRITE_ENDPOINT || 'https://sgp.cloud.appwrite.io/v1';
       const projectId = process.env.APPWRITE_PROJECT_ID;
       const bucketId = process.env.AUDIO_BUCKET_ID || 'audio-files';
@@ -117,7 +117,41 @@ class StreamManager {
     }
   }
 
-  async fetchAllNaats(databases, Query) {
+  async fetchOrderedPlaylist(databases, Query) {
+    const channels = await this.fetchOrderedChannels(databases, Query);
+    const documents = [];
+
+    for (const channel of channels) {
+      const channelNaats = await this.fetchNaatsForChannel(
+        databases,
+        Query,
+        channel.channelId,
+      );
+      console.log(
+        `Loaded ${channelNaats.length} naats for mode ${channel.modeName || channel.channelName}`,
+      );
+      documents.push(...channelNaats);
+    }
+
+    return { documents };
+  }
+
+  async fetchOrderedChannels(databases, Query) {
+    const response = await databases.listDocuments(
+      process.env.DATABASE_ID,
+      process.env.CHANNELS_COLLECTION_ID || "channels",
+      [
+        Query.limit(100),
+        Query.orderAsc("modeOrder"),
+        Query.orderAsc("channelName"),
+        Query.select(["$id", "channelId", "channelName", "modeName", "modeOrder"]),
+      ],
+    );
+
+    return response.documents;
+  }
+
+  async fetchNaatsForChannel(databases, Query, channelId) {
     const batchSize = 100;
     const documents = [];
     let offset = 0;
@@ -127,9 +161,12 @@ class StreamManager {
         process.env.DATABASE_ID,
         process.env.NAATS_COLLECTION_ID,
         [
+          Query.equal("channelId", channelId),
           Query.limit(batchSize),
           Query.offset(offset),
-          Query.select(["$id", "title", "audioId", "cutAudio", "duration"])
+          Query.orderAsc("sortOrder"),
+          Query.orderAsc("uploadDate"),
+          Query.select(["$id", "title", "audioId", "cutAudio", "duration", "sortOrder", "uploadDate"]),
         ]
       );
 
@@ -142,7 +179,7 @@ class StreamManager {
       offset += batchSize;
     }
 
-    return { documents };
+    return documents;
   }
 
   async generateFFmpegPlaylist() {

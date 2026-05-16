@@ -197,6 +197,15 @@ async function ensureSeeratSchema(databases) {
       true
     )
   );
+  await ensureAttribute(databases, SEERAT_COLLECTION_ID, "sortOrder", () =>
+    databases.createIntegerAttribute(
+      DATABASE_ID,
+      SEERAT_COLLECTION_ID,
+      "sortOrder",
+      false,
+      0
+    )
+  );
   await ensureAttribute(databases, SEERAT_COLLECTION_ID, "duration", () =>
     databases.createIntegerAttribute(
       DATABASE_ID,
@@ -337,6 +346,14 @@ async function ensureSeeratSchema(databases) {
   await ensureIndex(
     databases,
     SEERAT_COLLECTION_ID,
+    "sortOrder_asc",
+    IndexType.Key,
+    ["sortOrder"],
+    ["ASC"]
+  );
+  await ensureIndex(
+    databases,
+    SEERAT_COLLECTION_ID,
     "views_desc",
     IndexType.Key,
     ["views"],
@@ -381,6 +398,15 @@ async function ensureChannelsSchema(databases) {
       "modeName",
       100,
       false
+    )
+  );
+  await ensureAttribute(databases, CHANNELS_COLLECTION_ID, "modeOrder", () =>
+    databases.createIntegerAttribute(
+      DATABASE_ID,
+      CHANNELS_COLLECTION_ID,
+      "modeOrder",
+      false,
+      0
     )
   );
   await ensureAttribute(databases, CHANNELS_COLLECTION_ID, "type", () =>
@@ -438,6 +464,14 @@ async function ensureChannelsSchema(databases) {
     )
   );
 
+  await ensureIndex(
+    databases,
+    CHANNELS_COLLECTION_ID,
+    "modeOrder_asc",
+    IndexType.Key,
+    ["modeOrder"],
+    ["ASC"]
+  );
   await ensureIndex(
     databases,
     CHANNELS_COLLECTION_ID,
