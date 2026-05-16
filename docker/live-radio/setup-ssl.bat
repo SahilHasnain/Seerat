@@ -30,14 +30,14 @@ if exist "certbot\conf\live\%DOMAIN%" (
 
 REM Start nginx temporarily for certificate generation
 echo Starting nginx for certificate generation...
-docker compose -f docker-compose-ssl.yml up -d nginx
+docker compose up -d nginx
 
 REM Wait for nginx to be ready
 timeout /t 5 /nobreak
 
 REM Request certificate
 echo Requesting SSL certificate from Let's Encrypt...
-docker compose -f docker-compose-ssl.yml run --rm certbot certonly ^
+docker compose run --rm --entrypoint certbot certbot certonly ^
     --webroot ^
     --webroot-path=/var/www/certbot ^
     --email %EMAIL% ^
@@ -48,7 +48,7 @@ docker compose -f docker-compose-ssl.yml run --rm certbot certonly ^
 if %ERRORLEVEL% EQU 0 (
     echo ✓ SSL certificate obtained successfully!
     echo Restarting nginx with SSL...
-    docker compose -f docker-compose-ssl.yml restart nginx
+    docker compose restart nginx
     echo.
     echo Your stream is now available at:
     echo   https://%DOMAIN%/live

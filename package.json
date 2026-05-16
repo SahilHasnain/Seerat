@@ -49,7 +49,7 @@
     "prebuild": "cd apps/mobile && npx expo prebuild",
     "ssh:ai": "ssh root@159.89.160.239",
     "ssh:build": "ssh Sahilhasnain@98.70.32.91",
-    "ssh:radio": "ssh root@168.144.23.181"
+    "ssh:radio": "ssh root@168.144.117.227"
   },
   "devDependencies": {
     "@supabase/supabase-js": "^2.39.0",
