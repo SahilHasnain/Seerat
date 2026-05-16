@@ -5,9 +5,9 @@ services:
     restart: unless-stopped
     env_file:
       - .env
-    ports:
-      - "8000:8000" # Icecast
-      - "8080:3000" # API Server
+    expose:
+      - "8000"
+      - "3000"
     environment:
       - CLEAR_AUDIO_CACHE_ON_START=${CLEAR_AUDIO_CACHE_ON_START:-false}
     volumes:
@@ -19,3 +19,45 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+    networks:
+      - radio-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: live-radio-nginx
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "80:80"
+      - "443:443"
+    command: >
+      /bin/sh -c "envsubst '\$PUBLIC_DOMAIN' < /etc/nginx/templates/nginx.conf.template > /etc/nginx/nginx.conf
+      && nginx -g 'daemon off;'"
+    volumes:
+      - ./nginx-ssl.conf:/etc/nginx/templates/nginx.conf.template:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+    depends_on:
+      - live-radio
+    networks:
+      - radio-network
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  certbot:
+    image: certbot/certbot
+    container_name: live-radio-certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    networks:
+      - radio-network
+
+networks:
+  radio-network:
+    driver: bridge

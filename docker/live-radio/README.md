@@ -26,9 +26,9 @@ This Docker container provides a complete live radio streaming solution using Ic
    ```
 
 3. **Access the stream:**
-   - **Icecast Stream**: `http://<your-server>:8000/live`
-   - **API Endpoint**: `http://<your-server>:8080/api/current`
-   - **Icecast Admin**: `http://<your-server>:8000/admin/`
+   - **Icecast Stream**: `https://<your-domain>/live`
+   - **API Endpoint**: `https://<your-domain>/api/current`
+   - **Health Check**: `https://<your-domain>/health`
 
 ## API Endpoints
 
@@ -83,15 +83,15 @@ Health check endpoint for monitoring.
 
 ### Container won't start
 
-1. Check if ports 8000 and 8080 are available
+1. Check if ports 80 and 443 are available
 2. Verify environment variables are set correctly
 3. Check Docker logs: `docker compose logs -f`
 
 ### Stream not accessible
 
-1. Ensure firewall allows ports 8000 and 8080
+1. Ensure firewall allows ports 80 and 443
 2. Check if domain DNS is pointing to correct IP
-3. Test locally: `curl http://localhost:8000/live`
+3. Test locally: `curl http://localhost/health`
 
 ### No audio playing
 
@@ -133,6 +133,12 @@ The playlist updates automatically every 3 minutes from the Appwrite database.
 
 ```bash
 docker compose restart
+```
+
+### Stop services
+
+```bash
+docker compose down
 ```
 
 ### Clean rebuild
