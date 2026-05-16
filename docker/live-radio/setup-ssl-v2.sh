@@ -1,8 +1,13 @@
 #!/bin/bash
 
 # Setup SSL certificates for Live Radio streaming
-DOMAIN="owaisrazaqadri.duckdns.org"
-EMAIL="mdsahil1631@gmail.com"
+DOMAIN="${PUBLIC_DOMAIN}"
+EMAIL="${LETSENCRYPT_EMAIL}"
+
+if [ -z "$DOMAIN" ] || [ -z "$EMAIL" ]; then
+    echo "PUBLIC_DOMAIN and LETSENCRYPT_EMAIL must be set in .env"
+    exit 1
+fi
 
 echo "Setting up SSL certificates for $DOMAIN"
 echo "=========================================="

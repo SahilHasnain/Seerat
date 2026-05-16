@@ -4,6 +4,11 @@ const path = require('path');
 
 const app = express();
 const PORT = 3000;
+const PUBLIC_STREAM_URL =
+  process.env.PUBLIC_STREAM_URL ||
+  (process.env.PUBLIC_DOMAIN
+    ? `https://${process.env.PUBLIC_DOMAIN}/live`
+    : "http://localhost:8000/live");
 
 // Middleware
 app.use(cors());
@@ -37,7 +42,7 @@ app.get('/api/current', (req, res) => {
       elapsedSeconds,
       startedAt: currentTrackState.startedAt
     },
-    streamUrl: 'http://owaisrazaqadri.duckdns.org:8000/live',
+    streamUrl: PUBLIC_STREAM_URL,
     listenerCount: 0, // TODO: Get from Icecast stats
     upcomingTracks: [] // TODO: Implement upcoming tracks
   });

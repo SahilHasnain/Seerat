@@ -1,7 +1,19 @@
 @echo off
 REM Setup SSL certificates for Live Radio streaming
-SET DOMAIN=owaisrazaqadri.duckdns.org
-SET EMAIL=mdsahil1631@gmail.com
+for /f "tokens=1,* delims==" %%A in (.env) do (
+  if /I "%%A"=="PUBLIC_DOMAIN" set DOMAIN=%%B
+  if /I "%%A"=="LETSENCRYPT_EMAIL" set EMAIL=%%B
+)
+
+if "%DOMAIN%"=="" (
+  echo PUBLIC_DOMAIN must be set in .env
+  exit /b 1
+)
+
+if "%EMAIL%"=="" (
+  echo LETSENCRYPT_EMAIL must be set in .env
+  exit /b 1
+)
 
 echo Setting up SSL certificates for %DOMAIN%
 

@@ -3,16 +3,12 @@ services:
     build: .
     container_name: live-radio
     restart: unless-stopped
+    env_file:
+      - .env
     # Expose ports only internally when using nginx proxy
     expose:
       - "8000"  # Icecast
       - "3000"  # API Server
-    environment:
-      - APPWRITE_ENDPOINT=https://sgp.cloud.appwrite.io/v1
-      - APPWRITE_PROJECT_ID=695bb97700213f4ef5dd
-      - APPWRITE_API_KEY=${APPWRITE_API_KEY}
-      - DATABASE_ID=695bba86001b50478ed4
-      - NAATS_COLLECTION_ID=695bc8e70038db72df5b
     volumes:
       - ./audio-cache:/app/audio-cache
       - ./logs:/var/log/icecast
@@ -29,11 +25,16 @@ services:
     image: nginx:alpine
     container_name: live-radio-nginx
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - "80:80"
       - "443:443"
+    command: >
+      /bin/sh -c "envsubst '\$PUBLIC_DOMAIN' < /etc/nginx/templates/nginx.conf.template > /etc/nginx/nginx.conf
+      && nginx -g 'daemon off;'"
     volumes:
-      - ./nginx-ssl.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx-ssl.conf:/etc/nginx/templates/nginx.conf.template:ro
       - ./certbot/conf:/etc/letsencrypt:ro
       - ./certbot/www:/var/www/certbot:ro
     depends_on:

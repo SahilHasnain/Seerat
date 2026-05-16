@@ -16,19 +16,19 @@ This Docker container provides a complete live radio streaming solution using Ic
 
    ```bash
    cp .env.example .env
-   # Edit .env with your Appwrite API key
+   # Edit .env with your Appwrite and public domain values
    ```
 
 2. **Build and run:**
 
    ```bash
-   docker-compose up --build
+   docker compose up --build -d
    ```
 
 3. **Access the stream:**
-   - **Icecast Stream**: `http://owaisrazaqadri.duckdns.org:8000/live`
-   - **API Endpoint**: `http://owaisrazaqadri.duckdns.org:8080/api/current`
-   - **Icecast Admin**: `http://owaisrazaqadri.duckdns.org:8000/admin/`
+   - **Icecast Stream**: `http://<your-server>:8000/live`
+   - **API Endpoint**: `http://<your-server>:8080/api/current`
+   - **Icecast Admin**: `http://<your-server>:8000/admin/`
 
 ## API Endpoints
 
@@ -46,7 +46,7 @@ Returns current track information:
     "elapsedSeconds": 45,
     "startedAt": "2026-03-12T09:00:00.000Z"
   },
-  "streamUrl": "http://owaisrazaqadri.duckdns.org:8000/live",
+  "streamUrl": "https://radio.example.com/live",
   "listenerCount": 0
 }
 ```
@@ -69,8 +69,14 @@ Health check endpoint for monitoring.
 
 - `APPWRITE_API_KEY`: Your Appwrite API key (required)
 - `APPWRITE_ENDPOINT`: Appwrite endpoint (default: https://sgp.cloud.appwrite.io/v1)
-- `APPWRITE_PROJECT_ID`: Project ID (default: 695bb97700213f4ef5dd)
-- `DATABASE_ID`: Database ID (default: 695bc8e70038db72df5b)
+- `APPWRITE_PROJECT_ID`: Appwrite project ID
+- `DATABASE_ID`: Database ID (`seerat`)
+- `NAATS_COLLECTION_ID`: Naats collection ID (`seerat`)
+- `CHANNELS_COLLECTION_ID`: Channels collection ID (`channels`)
+- `AUDIO_BUCKET_ID`: Audio bucket ID (`audio-files`)
+- `PUBLIC_DOMAIN`: Public domain for SSL/nginx setup
+- `PUBLIC_STREAM_URL`: Optional override for API stream URL
+- `LETSENCRYPT_EMAIL`: Email for Let's Encrypt certificate requests
 - `CLEAR_AUDIO_CACHE_ON_START`: Set `true` to clear cached audio (`/app/audio-cache`) at container startup
 
 ## Troubleshooting
@@ -79,7 +85,7 @@ Health check endpoint for monitoring.
 
 1. Check if ports 8000 and 8080 are available
 2. Verify environment variables are set correctly
-3. Check Docker logs: `docker-compose logs -f`
+3. Check Docker logs: `docker compose logs -f`
 
 ### Stream not accessible
 
@@ -89,7 +95,7 @@ Health check endpoint for monitoring.
 
 ### No audio playing
 
-1. Check if naats have `cutAudio` field in database
+1. Check if naats have `audioId` or `cutAudio` in database
 2. Verify Appwrite API key has proper permissions
 3. Check stream manager logs for audio caching errors
 
@@ -114,7 +120,7 @@ Health check endpoint for monitoring.
 View logs in real-time:
 
 ```bash
-docker-compose logs -f live-radio
+docker compose logs -f live-radio
 ```
 
 ## Maintenance
@@ -126,20 +132,20 @@ The playlist updates automatically every 3 minutes from the Appwrite database.
 ### Restart services
 
 ```bash
-docker-compose restart
+docker compose restart
 ```
 
 ### Clean rebuild
 
 ```bash
-docker-compose down
-docker-compose up --build
+docker compose down
+docker compose up --build
 ```
 
 ### Force clear audio cache on startup
 
 ```bash
-CLEAR_AUDIO_CACHE_ON_START=true docker-compose up --build
+CLEAR_AUDIO_CACHE_ON_START=true docker compose up --build
 ```
 
 Then set it back to `false` for normal warm-cache behavior.
