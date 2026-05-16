@@ -8,7 +8,7 @@
  */
 
 require("dotenv").config({ path: "apps/mobile/.env" });
-const { Client, Databases, Query } = require("node-appwrite");
+const { Client, Databases, ID, Query } = require("node-appwrite");
 
 // Configuration from environment variables
 const config = {
@@ -108,15 +108,12 @@ async function playlistExists(databases, playlistId) {
  */
 async function addPlaylist(databases, playlistData) {
   try {
-    // Generate a unique channelId for the playlist (shorter format)
-    // Use first 8 chars of playlist ID to keep it under 36 chars
-    const shortId = playlistData.playlistId.substring(0, 8);
-    const channelId = `pl_${shortId}`;
+    const channelId = ID.unique();
 
     await databases.createDocument(
       config.databaseId,
       config.channelsCollectionId,
-      channelId, // Use shortened ID as document ID
+      channelId,
       {
         channelId: channelId,
         channelName: playlistData.name,
