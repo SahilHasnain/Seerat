@@ -32,10 +32,15 @@ services:
       - "80:80"
       - "443:443"
     command: >
-      /bin/sh -c "envsubst '$${PUBLIC_DOMAIN}' < /etc/nginx/templates/nginx.conf.template > /etc/nginx/nginx.conf
+      /bin/sh -c "if [ -n \"$${PUBLIC_DOMAIN}\" ] && [ -f \"/etc/letsencrypt/live/$${PUBLIC_DOMAIN}/fullchain.pem\" ] && [ -f \"/etc/letsencrypt/live/$${PUBLIC_DOMAIN}/privkey.pem\" ]; then
+      envsubst '$${PUBLIC_DOMAIN}' < /etc/nginx/templates/nginx-ssl.conf.template > /etc/nginx/nginx.conf;
+      else
+      cp /etc/nginx/templates/nginx-http-only.conf /etc/nginx/nginx.conf;
+      fi
       && nginx -g 'daemon off;'"
     volumes:
-      - ./nginx-ssl.conf:/etc/nginx/templates/nginx.conf.template:ro
+      - ./nginx-ssl.conf:/etc/nginx/templates/nginx-ssl.conf.template:ro
+      - ./nginx-http-only.conf:/etc/nginx/templates/nginx-http-only.conf:ro
       - ./certbot/conf:/etc/letsencrypt:ro
       - ./certbot/www:/var/www/certbot:ro
     depends_on:

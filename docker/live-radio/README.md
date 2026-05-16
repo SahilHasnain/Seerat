@@ -26,7 +26,8 @@ This Docker container provides a complete live radio streaming solution using Ic
    ```
 
 3. **Access the stream:**
-   - **Icecast Stream**: `https://<your-domain>/live`
+   - **Initial boot without certs**: `http://<your-domain>/`
+   - **After certs exist**: `https://<your-domain>/live`
    - **API Endpoint**: `https://<your-domain>/api/current`
    - **Health Check**: `https://<your-domain>/health`
 
@@ -92,6 +93,7 @@ Health check endpoint for monitoring.
 1. Ensure firewall allows ports 80 and 443
 2. Check if domain DNS is pointing to correct IP
 3. Test locally: `curl http://localhost/health`
+4. On first boot, nginx serves HTTP-only until Let's Encrypt files exist
 
 ### No audio playing
 
