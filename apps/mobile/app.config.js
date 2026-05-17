@@ -97,13 +97,6 @@ export default {
         }
       ],
       [
-        "@sentry/react-native",
-        {
-          organization: "sahil-hasnain",
-          project: "ubaid-raza-naats",
-        },
-      ],
-      [
         "expo-speech-recognition",
         {
           microphonePermission:
