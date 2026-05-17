@@ -1,4 +1,4 @@
-package com.owaisrazaqadri
+package com.seerat
 
 import android.app.Application
 import android.content.res.Configuration
