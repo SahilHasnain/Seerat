@@ -18,11 +18,15 @@ interface LiveRadioContextType {
   isLoading: boolean;
   error: string | null;
   showMiniPlayer: boolean; // Controls mini player visibility
+  sleepTimerMinutes: number | null;
+  sleepTimerRemaining: number | null;
   play: () => Promise<void>;
   pause: (fromLivePage?: boolean) => Promise<void>;
   pauseFromMiniPlayer: () => Promise<void>; // Special pause that keeps mini player visible
   stop: () => Promise<void>;
   refresh: () => Promise<void>;
+  setSleepTimer: (minutes: number) => void;
+  cancelSleepTimer: () => void;
 }
 
 const LiveRadioContext = createContext<LiveRadioContextType | undefined>(
@@ -41,9 +45,14 @@ export const LiveRadioProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showMiniPlayer, setShowMiniPlayer] = useState(false);
+  const [sleepTimerMinutes, setSleepTimerMinutes] = useState<number | null>(null);
+  const [sleepTimerRemaining, setSleepTimerRemaining] = useState<number | null>(null);
 
   const isInitialized = useRef(false);
   const stopSource = useRef<"dismiss" | "mini-pause" | null>(null);
+  const sleepTimerInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+  const sleepTimerEndTimeRef = useRef<number | null>(null);
+  const sleepTimerPausedAtRef = useRef<number | null>(null);
 
   // Static data - no metadata fetching
   const currentNaat = { title: "Naat Radio" };
@@ -69,6 +78,41 @@ export const LiveRadioProvider: React.FC<{ children: React.ReactNode }> = ({
   // Refresh function - no-op since we don't fetch metadata
   const refresh = useCallback(async () => {
     // No metadata to refresh
+  }, []);
+
+  // Sleep timer helper functions (defined early, but setSleepTimer defined after pause)
+  const pauseSleepTimer = useCallback(() => {
+    if (sleepTimerEndTimeRef.current === null || sleepTimerPausedAtRef.current !== null) {
+      return; // No timer active or already paused
+    }
+
+    // Store remaining time when paused
+    const remaining = Math.max(0, sleepTimerEndTimeRef.current - Date.now());
+    sleepTimerPausedAtRef.current = remaining;
+
+    console.log(`[LiveRadio] Sleep timer paused with ${Math.ceil(remaining / 1000)}s remaining`);
+  }, []);
+
+  const resumeSleepTimer = useCallback(() => {
+    if (sleepTimerPausedAtRef.current === null) {
+      return; // Timer not paused
+    }
+
+    const remainingMs = sleepTimerPausedAtRef.current;
+    const newEndTime = Date.now() + remainingMs;
+    sleepTimerEndTimeRef.current = newEndTime;
+    sleepTimerPausedAtRef.current = null;
+
+    console.log(`[LiveRadio] Sleep timer resumed with ${Math.ceil(remainingMs / 1000)}s remaining`);
+  }, []);
+
+  // Cleanup sleep timer on unmount
+  useEffect(() => {
+    return () => {
+      if (sleepTimerInterval.current) {
+        clearInterval(sleepTimerInterval.current);
+      }
+    };
   }, []);
 
   const stopInternal = useCallback(
@@ -167,6 +211,70 @@ export const LiveRadioProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  // Sleep timer functions (defined after pause)
+  const setSleepTimer = useCallback((minutes: number) => {
+    // Clear any existing timer
+    if (sleepTimerInterval.current) {
+      clearInterval(sleepTimerInterval.current);
+    }
+
+    const endTime = Date.now() + minutes * 60 * 1000;
+    sleepTimerEndTimeRef.current = endTime;
+    sleepTimerPausedAtRef.current = null;
+    setSleepTimerMinutes(minutes);
+    setSleepTimerRemaining(minutes * 60);
+
+    // Auto-start playback if paused
+    if (!isPlaying) {
+      console.log("[LiveRadio] Sleep timer set while paused - auto-starting playback");
+      play();
+    }
+
+    // Start countdown
+    sleepTimerInterval.current = setInterval(() => {
+      if (sleepTimerPausedAtRef.current !== null) {
+        // Timer is paused, don't update
+        return;
+      }
+
+      const remaining = Math.max(0, Math.ceil((sleepTimerEndTimeRef.current! - Date.now()) / 1000));
+      setSleepTimerRemaining(remaining);
+
+      if (remaining <= 0) {
+        // Timer finished
+        if (sleepTimerInterval.current) {
+          clearInterval(sleepTimerInterval.current);
+          sleepTimerInterval.current = null;
+        }
+        setSleepTimerMinutes(null);
+        sleepTimerEndTimeRef.current = null;
+        sleepTimerPausedAtRef.current = null;
+        // Pause playback
+        stop();
+      }
+    }, 1000);
+  }, [stop, isPlaying, play]);
+
+  const cancelSleepTimer = useCallback(() => {
+    if (sleepTimerInterval.current) {
+      clearInterval(sleepTimerInterval.current);
+      sleepTimerInterval.current = null;
+    }
+    setSleepTimerMinutes(null);
+    setSleepTimerRemaining(null);
+    sleepTimerEndTimeRef.current = null;
+    sleepTimerPausedAtRef.current = null;
+  }, []);
+
+  // Monitor playback state changes to pause/resume sleep timer
+  useEffect(() => {
+    if (isPlaying) {
+      resumeSleepTimer();
+    } else {
+      pauseSleepTimer();
+    }
+  }, [isPlaying, pauseSleepTimer, resumeSleepTimer]);
+
   // Monitor TrackPlayer state changes
   useEffect(() => {
     const subscription = TrackPlayer.addEventListener(
@@ -250,11 +358,15 @@ export const LiveRadioProvider: React.FC<{ children: React.ReactNode }> = ({
     isLoading,
     error,
     showMiniPlayer,
+    sleepTimerMinutes,
+    sleepTimerRemaining,
     play,
     pause,
     pauseFromMiniPlayer,
     stop,
     refresh,
+    setSleepTimer,
+    cancelSleepTimer,
   };
 
   return (
