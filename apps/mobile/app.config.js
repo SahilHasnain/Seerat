@@ -24,11 +24,11 @@ const getAppName = () => {
 export default {
   expo: {
     name: getAppName(),
-    slug: "owais-raza-qadri",
+    slug: "seerat",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/images/android-icon-foreground.png",
-    scheme: "ubaidraza",
+    scheme: "seerat",
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
     ios: {
@@ -37,10 +37,10 @@ export default {
       infoPlist: {
         UIBackgroundModes: ["audio"],
       },
-      associatedDomains: ["applinks:owaisrazaqadri.appwrite.network"],
+      associatedDomains: ["applinks:seerat.appwrite.network"],
     },
     android: {
-      versionCode: 15,
+      versionCode: 1,
       adaptiveIcon: {
         foregroundImage: "./assets/images/android-icon-foreground.png",
         backgroundColor: "#000000",
@@ -61,7 +61,7 @@ export default {
           autoVerify: true,
           data: [
             {
-              scheme: "ubaidraza",
+              scheme: "seerat",
               host: "*",
             },
           ],
@@ -73,7 +73,7 @@ export default {
           data: [
             {
               scheme: "https",
-              host: "owaisrazaqadri.appwrite.network",
+              host: "seerat.appwrite.network",
               pathPrefix: "/naat",
             },
           ],
@@ -116,7 +116,7 @@ export default {
     extra: {
       router: {},
       eas: {
-       "projectId": "2c3222cc-907f-459e-a719-34f65d3045e1"
+        "projectId": "7927aef1-e1c8-4991-acec-e63e89dfc4d0"
       },
     },
   },

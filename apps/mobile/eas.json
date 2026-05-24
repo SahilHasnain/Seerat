@@ -1,7 +1,7 @@
 {
   "cli": {
     "version": ">= 16.28.0",
-    "appVersionSource": "local"
+    "appVersionSource": "remote"
   },
   "build": {
     "base": {
@@ -23,7 +23,6 @@
         "EXPO_PUBLIC_APPWRITE_CHANNELS_COLLECTION_ID": "channels",
         "EXPO_PUBLIC_APPWRITE_LIVE_RADIO_COLLECTION_ID": "live_radio",
         "EXPO_PUBLIC_RADIO_FUNCTION_ENDPOINT": "https://698b307d001f4e3bb03e.sgp.appwrite.run",
-        "EXPO_PUBLIC_SEMANTIC_SEARCH_FUNCTION_URL": "",
         "EXPO_PUBLIC_USE_SEMANTIC_SEARCH": "false",
         "EXPO_PUBLIC_DISABLE_SEARCH_SUGGESTIONS": "true",
         "EXPO_PUBLIC_SENTRY_DSN": "https://26f7852901dbe4c65a101e2300db1d8f@o4509954219966464.ingest.de.sentry.io/4510675297501264",
@@ -41,7 +40,6 @@
         "EXPO_PUBLIC_APPWRITE_CHANNELS_COLLECTION_ID": "channels",
         "EXPO_PUBLIC_APPWRITE_LIVE_RADIO_COLLECTION_ID": "live_radio",
         "EXPO_PUBLIC_RADIO_FUNCTION_ENDPOINT": "https://698b307d001f4e3bb03e.sgp.appwrite.run",
-        "EXPO_PUBLIC_SEMANTIC_SEARCH_FUNCTION_URL": "",
         "EXPO_PUBLIC_USE_SEMANTIC_SEARCH": "false",
         "EXPO_PUBLIC_DISABLE_SEARCH_SUGGESTIONS": "true",
         "EXPO_PUBLIC_SENTRY_DSN": "https://26f7852901dbe4c65a101e2300db1d8f@o4509954219966464.ingest.de.sentry.io/4510675297501264",
@@ -60,7 +58,6 @@
         "EXPO_PUBLIC_APPWRITE_CHANNELS_COLLECTION_ID": "channels",
         "EXPO_PUBLIC_APPWRITE_LIVE_RADIO_COLLECTION_ID": "live_radio",
         "EXPO_PUBLIC_RADIO_FUNCTION_ENDPOINT": "https://698b307d001f4e3bb03e.sgp.appwrite.run",
-        "EXPO_PUBLIC_SEMANTIC_SEARCH_FUNCTION_URL": "",
         "EXPO_PUBLIC_USE_SEMANTIC_SEARCH": "false",
         "EXPO_PUBLIC_DISABLE_SEARCH_SUGGESTIONS": "true",
         "EXPO_PUBLIC_SENTRY_DSN": "https://26f7852901dbe4c65a101e2300db1d8f@o4509954219966464.ingest.de.sentry.io/4510675297501264",
