@@ -1,7 +1,7 @@
 {
   "cli": {
     "version": ">= 16.28.0",
-    "appVersionSource": "remote"
+    "appVersionSource": "local"
   },
   "build": {
     "base": {
@@ -49,7 +49,7 @@
     },
     "production": {
       "autoIncrement": false,
-      "credentialsSource": "local",
+      "credentialsSource": "remote",
       "env": {
         "EXPO_PUBLIC_APPWRITE_ENDPOINT": "https://sgp.cloud.appwrite.io/v1",
         "EXPO_PUBLIC_APPWRITE_PROJECT_ID": "69a53cb20013abbe9014",

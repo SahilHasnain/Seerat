@@ -3,12 +3,12 @@ const IS_PREVIEW = process.env.APP_VARIANT === "preview";
 
 const getUniqueIdentifier = () => {
   if (IS_DEV) {
-    return "com.seerat.dev";
+    return "com.seeratemustafa.dev";
   }
   if (IS_PREVIEW) {
-    return "com.seerat.preview";
+    return "com.seeratemustafa.preview";
   }
-  return "com.seerat";
+  return "com.seeratemustafa";
 };
 
 const getAppName = () => {
@@ -40,7 +40,7 @@ export default {
       associatedDomains: ["applinks:seerat.appwrite.network"],
     },
     android: {
-      versionCode: 1,
+      versionCode: 2,
       adaptiveIcon: {
         foregroundImage: "./assets/images/android-icon-foreground.png",
         backgroundColor: "#000000",
