@@ -180,7 +180,7 @@ const NativeLiveRadioMiniPlayer: React.FC<LiveRadioMiniPlayerProps> = ({
               className="items-center justify-center mr-2 h-9 w-9"
               accessibilityRole="button"
               accessibilityLabel={
-                isPlaying ? "Pause naat radio" : "Play naat radio"
+                isPlaying ? "Pause seerat radio" : "Play seerat radio"
               }
             >
               <Ionicons
@@ -198,7 +198,7 @@ const NativeLiveRadioMiniPlayer: React.FC<LiveRadioMiniPlayerProps> = ({
               }}
               className="items-center justify-center h-9 w-9"
               accessibilityRole="button"
-              accessibilityLabel="Stop naat radio"
+              accessibilityLabel="Stop seerat radio"
             >
               <Ionicons name="close" size={22} color={colors.text.secondary} />
             </TouchableOpacity>

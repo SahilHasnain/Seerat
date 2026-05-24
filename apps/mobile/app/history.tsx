@@ -653,7 +653,7 @@ export default function HistoryScreen() {
     if (history.length === 0) {
       return (
         <EmptyState
-          message="No watch history yet. Start watching some naats!"
+          message="No watch history yet. Start watching some episodes!"
           iconName="time"
         />
       );

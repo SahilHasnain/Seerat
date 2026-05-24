@@ -23,9 +23,8 @@ export default function SharedNaatRedirectScreen() {
 
     hasHandledRef.current = true;
 
-    const appUrl = `${APP_SCHEME}://naat/${naatId}${
-      youtubeId ? `?youtubeId=${encodeURIComponent(youtubeId)}` : ""
-    }`;
+    const appUrl = `${APP_SCHEME}://naat/${naatId}${youtubeId ? `?youtubeId=${encodeURIComponent(youtubeId)}` : ""
+      }`;
     const youtubeUrl = youtubeId
       ? `https://youtu.be/${youtubeId}`
       : "https://www.youtube.com";
@@ -52,7 +51,7 @@ export default function SharedNaatRedirectScreen() {
   return (
     <View style={styles.container}>
       <ActivityIndicator size="large" color="#ffffff" />
-      <Text style={styles.title}>Opening shared naat</Text>
+      <Text style={styles.title}>Opening shared episode</Text>
       <Text style={styles.subtitle}>
         {Platform.OS === "web"
           ? "Redirecting to the app or YouTube..."

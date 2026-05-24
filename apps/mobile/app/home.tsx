@@ -340,7 +340,7 @@ export default function HomeScreen() {
     if (filters.isShowingSearchResults && filters.displayData.length === 0) {
       return (
         <EmptyState
-          message="No naats found matching your search."
+          message="No episodes found matching your search."
           iconName="search"
         />
       );
@@ -348,7 +348,7 @@ export default function HomeScreen() {
     if (filters.displayData.length === 0) {
       return (
         <EmptyState
-          message="No naats available yet. Check back soon!"
+          message="No episodes available yet. Check back soon!"
           iconName="musical-notes"
         />
       );

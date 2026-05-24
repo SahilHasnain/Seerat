@@ -5,8 +5,8 @@ import { Image } from "expo-image";
 import React, { useEffect, useRef } from "react";
 import { Modal, Text, TextInput, TouchableWithoutFeedback, View } from "react-native";
 import Animated, {
-    useAnimatedStyle,
-    type SharedValue,
+  useAnimatedStyle,
+  type SharedValue,
 } from "react-native-reanimated";
 import Pressable from "./ResponsivePressable";
 
@@ -156,136 +156,136 @@ export function AnimatedHeader({
           className="px-4 pt-safe-top pb-3"
           style={{ backgroundColor: colors.background.primary }}
         >
-        {isSearchActive ? (
-          /* Search Mode */
-          <View className="flex-row items-center mb-3">
-            {/* Back Button */}
-            <Pressable
-              onPress={onSearchClose}
-              className="mr-3 items-center justify-center rounded-full"
-              accessibilityLabel="Close search"
-              accessibilityRole="button"
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              style={{
-                width: 36,
-                height: 36,
-                backgroundColor: colors.background.secondary,
-              }}
-            >
-              <Ionicons
-                name="chevron-back"
-                size={20}
-                color={colors.text.secondary}
-              />
-            </Pressable>
-
-            {/* Search Input */}
-            <View
-              className="flex-1 flex-row items-center px-4 py-2.5 rounded-full border"
-              style={{
-                backgroundColor: colors.background.secondary,
-                borderColor: colors.border.subtle,
-              }}
-            >
-              <Ionicons
-                name="search"
-                size={18}
-                color={colors.text.secondary}
-                style={{ marginRight: 10 }}
-              />
-              <TextInput
-                ref={inputRef}
-                value={searchInput}
-                onChangeText={onSearchInputChange}
-                onSubmitEditing={onSearchSubmit}
-                placeholder="Search naats..."
-                placeholderTextColor={colors.text.secondary}
-                className="flex-1 text-base"
-                autoCapitalize="none"
-                autoCorrect={false}
-                returnKeyType="search"
-                style={{ paddingVertical: 0, color: colors.text.primary }}
-              />
-              {searchInput.length > 0 && (
-                <Pressable
-                  onPress={() => onSearchInputChange?.("")}
-                  className="items-center justify-center rounded-full"
-                  accessibilityLabel="Clear search"
-                  accessibilityRole="button"
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  style={{
-                    width: 24,
-                    height: 24,
-                  }}
-                >
-                  <Ionicons
-                    name="close-circle"
-                    size={18}
-                    color={colors.text.secondary}
-                  />
-                </Pressable>
-              )}
-            </View>
-          </View>
-        ) : (
-          /* Normal Mode */
-          <View className="flex-row items-center justify-between mb-3">
-            <View
-              className="rounded-full overflow-hidden"
-              style={{ width: 32, height: 32 }}
-            >
-              <Image
-                source={require("@/assets/images/android-icon-foreground.png")}
-                style={{ width: 32, height: 32 }}
-                contentFit="cover"
-              />
-            </View>
-
-            <View className="flex-1 flex-row items-center justify-end gap-3 ml-3">
+          {isSearchActive ? (
+            /* Search Mode */
+            <View className="flex-row items-center mb-3">
+              {/* Back Button */}
               <Pressable
-                onPress={onSearchPress}
-                accessibilityLabel="Search"
+                onPress={onSearchClose}
+                className="mr-3 items-center justify-center rounded-full"
+                accessibilityLabel="Close search"
                 accessibilityRole="button"
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                style={{
+                  width: 36,
+                  height: 36,
+                  backgroundColor: colors.background.secondary,
+                }}
+              >
+                <Ionicons
+                  name="chevron-back"
+                  size={20}
+                  color={colors.text.secondary}
+                />
+              </Pressable>
+
+              {/* Search Input */}
+              <View
+                className="flex-1 flex-row items-center px-4 py-2.5 rounded-full border"
+                style={{
+                  backgroundColor: colors.background.secondary,
+                  borderColor: colors.border.subtle,
+                }}
               >
                 <Ionicons
                   name="search"
-                  size={24}
-                  color={colors.text.primary}
-                />
-              </Pressable>
-
-              <Pressable
-                onPress={() => setShowModeMenu((prev) => !prev)}
-                className="rounded-xl flex-row items-center px-3"
-                style={{
-                  minHeight: 38,
-                  backgroundColor: hasSelectedMode
-                    ? colors.accent.primary
-                    : colors.background.secondary,
-                  opacity: disableFilter ? 0.3 : 1,
-                }}
-                accessibilityLabel="Select mode"
-                accessibilityRole="button"
-                disabled={disableFilter}
-              >
-                <Text
-                  className="text-sm font-semibold"
-                  style={{
-                    color: hasSelectedMode ? "#ffffff" : colors.text.primary,
-                  }}
-                >
-                  {currentMode.name}
-                </Text>
-                <Ionicons
-                  name={showModeMenu ? "chevron-up" : "chevron-down"}
                   size={18}
-                  color={hasSelectedMode ? "#ffffff" : colors.text.primary}
-                  style={{ marginLeft: 6 }}
+                  color={colors.text.secondary}
+                  style={{ marginRight: 10 }}
                 />
-              </Pressable>
+                <TextInput
+                  ref={inputRef}
+                  value={searchInput}
+                  onChangeText={onSearchInputChange}
+                  onSubmitEditing={onSearchSubmit}
+                  placeholder="Search episodes..."
+                  placeholderTextColor={colors.text.secondary}
+                  className="flex-1 text-base"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="search"
+                  style={{ paddingVertical: 0, color: colors.text.primary }}
+                />
+                {searchInput.length > 0 && (
+                  <Pressable
+                    onPress={() => onSearchInputChange?.("")}
+                    className="items-center justify-center rounded-full"
+                    accessibilityLabel="Clear search"
+                    accessibilityRole="button"
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    style={{
+                      width: 24,
+                      height: 24,
+                    }}
+                  >
+                    <Ionicons
+                      name="close-circle"
+                      size={18}
+                      color={colors.text.secondary}
+                    />
+                  </Pressable>
+                )}
+              </View>
             </View>
-          </View>
-        )}
+          ) : (
+            /* Normal Mode */
+            <View className="flex-row items-center justify-between mb-3">
+              <View
+                className="rounded-full overflow-hidden"
+                style={{ width: 32, height: 32 }}
+              >
+                <Image
+                  source={require("@/assets/images/android-icon-foreground.png")}
+                  style={{ width: 32, height: 32 }}
+                  contentFit="cover"
+                />
+              </View>
+
+              <View className="flex-1 flex-row items-center justify-end gap-3 ml-3">
+                <Pressable
+                  onPress={onSearchPress}
+                  accessibilityLabel="Search"
+                  accessibilityRole="button"
+                >
+                  <Ionicons
+                    name="search"
+                    size={24}
+                    color={colors.text.primary}
+                  />
+                </Pressable>
+
+                <Pressable
+                  onPress={() => setShowModeMenu((prev) => !prev)}
+                  className="rounded-xl flex-row items-center px-3"
+                  style={{
+                    minHeight: 38,
+                    backgroundColor: hasSelectedMode
+                      ? colors.accent.primary
+                      : colors.background.secondary,
+                    opacity: disableFilter ? 0.3 : 1,
+                  }}
+                  accessibilityLabel="Select mode"
+                  accessibilityRole="button"
+                  disabled={disableFilter}
+                >
+                  <Text
+                    className="text-sm font-semibold"
+                    style={{
+                      color: hasSelectedMode ? "#ffffff" : colors.text.primary,
+                    }}
+                  >
+                    {currentMode.name}
+                  </Text>
+                  <Ionicons
+                    name={showModeMenu ? "chevron-up" : "chevron-down"}
+                    size={18}
+                    color={hasSelectedMode ? "#ffffff" : colors.text.primary}
+                    style={{ marginLeft: 6 }}
+                  />
+                </Pressable>
+              </View>
+            </View>
+          )}
         </View>
       </Animated.View>
     </>

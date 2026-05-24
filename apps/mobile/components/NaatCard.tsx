@@ -74,7 +74,7 @@ const NaatCard: React.FC<NaatCardProps> = ({
                   className="mt-2 text-xs font-medium"
                   style={{ color: colors.text.tertiary }}
                 >
-                  Naat artwork unavailable
+                  Episode artwork unavailable
                 </Text>
               </View>
             </View>

@@ -162,7 +162,7 @@ export default function HomeWebScreen() {
           }}
         >
           <TextInput
-            placeholder="Search naats"
+            placeholder="Search episodes"
             placeholderTextColor="rgba(255,255,255,0.34)"
             value={searchInput}
             onChangeText={setSearchInput}

@@ -8,7 +8,7 @@ import Pressable from "./ResponsivePressable";
 const SearchBar: React.FC<SearchBarProps> = ({
   value,
   onChangeText,
-  placeholder = "Search naats...",
+  placeholder = "Search episodes...",
 }) => {
   const inputRef = React.useRef<TextInput>(null);
 
@@ -44,8 +44,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
         returnKeyType="search"
         autoCapitalize="none"
         autoCorrect={false}
-        accessibilityLabel="Search naats"
-        accessibilityHint="Type to search for naats by title"
+        accessibilityLabel="Search episodes"
+        accessibilityHint="Type to search for episodes by title"
         style={{ paddingVertical: 0, color: colors.text.primary }}
       />
 
