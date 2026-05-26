@@ -16,15 +16,8 @@ platform :android do
     gradle(task: "test")
   end
 
-  private_lane :ensure_sentry_token do
-    if ENV["SENTRY_AUTH_TOKEN"].to_s.empty?
-      UI.user_error!("Missing SENTRY_AUTH_TOKEN. Set it in apps/mobile/.env.local before running fastlane.")
-    end
-  end
-
   desc "Submit a new Beta Build to Crashlytics Beta"
   lane :beta do
-    ensure_sentry_token
     gradle(
       task: "clean bundleRelease",
       project_dir: "./"
@@ -34,7 +27,6 @@ platform :android do
 
   desc "Deploy a new version to the Google Play"
   lane :deploy do |options|
-    ensure_sentry_token
     ensure_play_store_key
 
     unless ENV["SKIP_ANDROID_BUILD"].to_s == "true"
