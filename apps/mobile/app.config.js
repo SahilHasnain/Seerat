@@ -40,7 +40,7 @@ export default {
       associatedDomains: ["applinks:seerat.appwrite.network"],
     },
     android: {
-      versionCode: 2,
+      versionCode: 3,
       adaptiveIcon: {
         foregroundImage: "./assets/images/android-icon-foreground.png",
         backgroundColor: "#000000",
